@@ -23,14 +23,14 @@ class UserApi {
     }
   }
 
-  Future<bool> register(String nombre, String apellidos, String email, String password) async {
+  Future<bool> register(String name, String lastname, String phone, String email, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/register/'),
       body: {
         'email': email,
         'contraseña': password,
-        'nombres': nombre,
-        'apellidos': apellidos,
+        'nombres': name,
+        'apellidos': lastname,
       },
     );
 

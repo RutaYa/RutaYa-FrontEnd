@@ -17,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -47,6 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final success = await registerUseCase.register(
           _nameController.text,
           _lastNameController.text,
+          _phoneController.text,
           _emailController.text,
           _passwordController.text,
         );
@@ -81,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Debes aceptar los términos y condiciones'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFFD0000),
         ),
       );
     }
@@ -96,7 +98,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          },
         ),
       ),
       body: SafeArea(
@@ -113,15 +120,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
-
                   // Título principal
                   const Text(
                     'Crear cuenta',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Color(0xFFFD0000),
                     ),
                   ),
 
@@ -232,7 +237,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
 
+                  // Campo de apellidos
+                  const Text(
+                    'Celular',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese su número de celular';
+                      } else if (!RegExp(r'^\d+$').hasMatch(value)) {
+                        return 'El número de celular solo debe contener dígitos';
+                      } else if (value.length != 9) {
+                        return 'El número de celular debe tener 9 dígitos';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      hintText: '000 000 000',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      fillColor: Colors.grey[100],
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 16,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
 
                   // Campo de correo electrónico
@@ -389,7 +440,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _acceptTerms = value ?? false;
                             });
                           },
-                          activeColor: const Color(0xFF8C52FF),
+                          activeColor: const Color(0xFFFD0000),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(4),
                           ),
@@ -404,7 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               TextSpan(
                                 text: 'Términos de servicio',
-                                style: TextStyle(color: Colors.blue[400]),
+                                style: TextStyle(color: Color(0xFF4B4B4B)),
                               ),
                               const TextSpan(
                                 text: ' y la ',
@@ -412,7 +463,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               TextSpan(
                                 text: 'Política de privacidad',
-                                style: TextStyle(color: Colors.blue[400]),
+                                style: TextStyle(color: Color(0xFF4B4B4B)),
                               ),
                             ],
                           ),
@@ -422,35 +473,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
 
                   const SizedBox(height: 32),
-
-                  // Botón de crear cuenta
                   SizedBox(
                     width: double.infinity,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: _acceptTerms
-                            ? const LinearGradient(
-                          colors: [Color(0xFF8C52FF), Color(0xFF00A3FF)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        )
-                            : LinearGradient(
-                          colors: [Colors.grey[300]!, Colors.grey[300]!],
+                        gradient: _isLoading
+                            ? null
+                            : const LinearGradient(
+                          colors: [Color(0xFFFD0000), Color(0xFFF6211F)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
                         borderRadius: BorderRadius.circular(15),
+                        color: _isLoading ? const Color(0xFFE5E5E5) : null,
                       ),
                       child: ElevatedButton(
-                        onPressed: (_isLoading || !_acceptTerms) ? null : _handleRegister,
+                        onPressed: _isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _isLoading ? Color(0xFFE5E5E5)  : Colors.transparent, // Se vuelve gris si está cargando
+                          backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          disabledBackgroundColor: Color(0xFFE5E5E5) , // También aseguramos que el color deshabilitado sea gris
+                          disabledBackgroundColor: Colors.transparent,
                         ),
                         child: _isLoading
                             ? const SizedBox(
@@ -461,70 +507,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                            : Text( // Eliminamos "const" aquí
+                            : const Text(
                           'Crear cuenta',
                           style: TextStyle(
                             fontSize: 20,
-                            color: _acceptTerms ? Colors.white : Colors.grey[600],
+                            color: Colors.white,
                           ),
                         ),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 32),
-                  // Separador "O continúa con"
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: Colors.grey[300],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'O registrate con',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: Colors.grey[300],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Opciones de inicio de sesión con redes sociales
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Botón de Google
-                      _socialLoginButton(
-                        onPressed: () {},
-                        icon: const FaIcon(FontAwesomeIcons.google, color: Colors.red),
-                      ),
-
-                      // Botón de Facebook
-                      _socialLoginButton(
-                        onPressed: () {},
-                        icon: const FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
-                      ),
-
-                      // Botón de Apple
-                      _socialLoginButton(
-                        onPressed: () {},
-                        icon: const FaIcon(FontAwesomeIcons.apple),
-                      ),
-                    ],
                   ),
 
                   const SizedBox(height: 32),
@@ -555,7 +546,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: const Text(
                             'Inicia sesion',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: Color(0xFFFD0000),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
