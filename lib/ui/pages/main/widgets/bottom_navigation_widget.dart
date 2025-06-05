@@ -1,4 +1,3 @@
-// lib/ui/pages/main/widgets/bottom_navigation_widget.dart
 import 'package:flutter/material.dart';
 
 class BottomNavigationWidget extends StatelessWidget {
@@ -13,51 +12,59 @@ class BottomNavigationWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 90,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(currentIndex == 2 ? 0.07 : 0.2),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return SizedBox(
+      height: 80,
+      child: Stack(
         children: [
-          _buildNavItem(
-            index: 0,
-            icon: Icons.home,
-            label: 'Inicio',
-            isActive: currentIndex == 0,
+          Container(
+            height: 80,
+            color: Colors.white,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  iconOutlined: Icons.home_outlined,
+                  iconFilled: Icons.home,
+                  label: 'Home',
+                ),
+                _buildNavItem(
+                  index: 1,
+                  iconOutlined: Icons.chat_bubble_outline,
+                  iconFilled: Icons.chat_bubble,
+                  label: 'Chat',
+                ),
+                _buildNavItem(
+                  index: 2,
+                  iconOutlined: Icons.calendar_today_outlined,
+                  iconFilled: Icons.calendar_today,
+                  label: 'Reservas',
+                ),
+                _buildNavItem(
+                  index: 3,
+                  iconOutlined: Icons.groups_outlined,
+                  iconFilled: Icons.groups,
+                  label: 'Comunidad',
+                ),
+                _buildNavItem(
+                  index: 4,
+                  iconOutlined: Icons.person_outline,
+                  iconFilled: Icons.person,
+                  label: 'Perfil',
+                ),
+              ],
+            ),
           ),
-          _buildNavItem(
-            index: 1,
-            icon: Icons.chat_bubble_outline,
-            label: 'Asistente',
-            isActive: currentIndex == 1,
-          ),
-          _buildNavItem(
-            index: 2,
-            icon: Icons.book,
-            label: 'Paquetes',
-            isActive: currentIndex == 2,
-          ),
-          _buildNavItem(
-            index: 3,
-            icon: Icons.people,
-            label: 'Comunidad',
-            isActive: currentIndex == 3,
-          ),
-          _buildNavItem(
-            index: 4,
-            icon: Icons.person,
-            label: 'Perfil',
-            isActive: currentIndex == 3,
+          // Línea superior animada
+          AnimatedAlign(
+            alignment: _getAlignment(currentIndex),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: Container(
+              width: MediaQuery.of(context).size.width / 5,
+              height: 3,
+              color: const Color(0xFFFD0000),
+            ),
           ),
         ],
       ),
@@ -66,60 +73,54 @@ class BottomNavigationWidget extends StatelessWidget {
 
   Widget _buildNavItem({
     required int index,
-    required IconData icon,
+    required IconData iconOutlined,
+    required IconData iconFilled,
     required String label,
-    required bool isActive,
   }) {
-    return Material(
-      color: Colors.transparent,
+    final isActive = currentIndex == index;
+
+    return Expanded(
       child: InkWell(
         onTap: () => onTap(index),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
-        hoverColor: Colors.transparent,
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          width: 70, // Ancho fijo para mayor área de toque
-          height: 85, // Altura suficiente para incluir ícono + espacio + texto
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Ícono
-              Container(
-                width: isActive ? 43 : 30,
-                height: isActive ? 43 : 30,
-                decoration: isActive
-                    ? BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF8C52FF), Color(0xFF00A3FF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                )
-                    : null,
-                child: Icon(
-                  icon,
-                  size: 26,
-                  color: isActive ? Colors.white : Colors.grey[600],
-                ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? iconFilled : iconOutlined,
+              size: 27,
+              color: isActive ? Colors.black54 : Colors.grey,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.black54 : Colors.grey,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
               ),
-              const SizedBox(height: 0),
-              // Label
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isActive ? const Color(0xFF8C52FF) : Colors.grey[600],
-                  fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  Alignment _getAlignment(int index) {
+    switch (index) {
+      case 0:
+        return Alignment(-1.0, -1.0);
+      case 1:
+        return Alignment(-0.5, -1.0);
+      case 2:
+        return Alignment(0.0, -1.0);
+      case 3:
+        return Alignment(0.5, -1.0);
+      case 4:
+        return Alignment(1.0, -1.0);
+      default:
+        return Alignment(-1.0, -1.0);
+    }
+  }
 }
