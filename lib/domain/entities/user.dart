@@ -15,8 +15,8 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['user_id'].toString(), // Convertir a String
-      firstName: json['nombres'], // Mapea 'nombres' a 'firstName'
-      lastName: json['apellidos'], // Mapea 'apellidos' a 'lastName'
+      firstName: json['first_name'], // Mapea 'nombres' a 'firstName'
+      lastName: json['last_name'], // Mapea 'apellidos' a 'lastName'
       email: json['email'], // Mapea 'email' a 'email'
     );
   }
@@ -25,8 +25,8 @@ class User {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'nombres': firstName,
-      'apellidos': lastName,
+      'first_name': firstName,
+      'last_name': lastName,
       'email': email,
     };
   }

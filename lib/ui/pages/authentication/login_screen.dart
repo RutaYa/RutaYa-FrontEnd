@@ -7,7 +7,6 @@ import '../../../data/repositories/local_storage_service.dart';
 import '../../../application/login_use_case.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -30,7 +29,16 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _showError(String message) {
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -48,17 +56,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
         final loginUseCase = getIt<LoginUseCase>();
 
-        final user = await loginUseCase.login(
-            _emailController.text,
+        final loginResponse = await loginUseCase.login(
+            _emailController.text.toLowerCase(),
             _passwordController.text
         );
 
-        if (user!=null) {
+        if (loginResponse!=null) {
           // Simulamos una llamada a la API
-          await Future.delayed(const Duration(seconds: 2));
+          //await Future.delayed(const Duration(seconds: 2));
+          _showSuccessSnackBar("Inicio de sesion exitoso!.");
 
+          print(loginResponse.message);
+          print(loginResponse.user.firstName);
           // Por ahora, simulamos un login exitoso
-          localStorageService.clearAllTables(); // limpiar mensajes
+          //localStorageService.clearAllTables(); // limpiar mensajes
           //localStorageService.insertSamplePets(); // crear ejemplos
 
           setState(() {
@@ -85,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        _showError('Error al iniciar sesión: ${e.toString()}');
+        _showErrorSnackBar('Error al iniciar sesión: ${e.toString()}');
       }
     }
   }
@@ -94,24 +105,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffffffff),
-      body: Column(
-        children: [
-          // Galería pegada a los límites superiores y laterales
-          Container(
-            width: double.infinity,
-            height: 350,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/gallery.png'),
-                fit: BoxFit.cover,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Galería - ahora también es scrolleable
+              Container(
+                width: double.infinity,
+                height: 350,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/gallery.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
-          ),
-          // Contenido scrolleable debajo
-          Expanded(
-            child: SafeArea(
-              top: false, // No aplicar SafeArea arriba porque ya está la galería
-              child: SingleChildScrollView(
+              // Contenido del formulario
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Form(
                   key: _formKey,
@@ -175,7 +185,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.black87,
                                 ),
                               ),
-
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -315,9 +324,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

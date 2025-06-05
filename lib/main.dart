@@ -40,8 +40,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // Esto quita el banner de "Debug"
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8C52FF),
-          primary: const Color(0xFF8C52FF),
+          seedColor: const Color(0xFFFD0000),
+          primary: const Color(0xFFF6211F),
         ),
         useMaterial3: true,
       ),

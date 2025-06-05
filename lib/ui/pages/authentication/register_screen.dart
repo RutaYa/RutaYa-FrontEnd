@@ -49,12 +49,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _nameController.text,
           _lastNameController.text,
           _phoneController.text,
-          _emailController.text,
+          _emailController.text.toLowerCase(),
           _passwordController.text,
         );
 
         if (success) {
           //await Future.delayed(Duration(seconds: 3)); // Espera 3 segundos antes de continuar
+          _showSuccessSnackBar("Registro exitoso!.");
+
           setState(() {
             _isLoading=false;
           });
@@ -62,17 +64,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const PreferencesFormScreen(isFirstTime: true),
+              builder: (context) => const LoginScreen(),
             ),
           );
         } else {
           setState(() {
             _isLoading=false;
           });
-          // Registro fallido → muestra error
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registro fallido. Intenta nuevamente')),
-          );
+          _showErrorSnackBar("Registro fallido. Por favor verifica tus datos.");
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,6 +86,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
