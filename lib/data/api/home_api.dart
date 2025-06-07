@@ -53,6 +53,7 @@ class HomeApi {
 
       // Ejecutar la solicitud HTTP adecuada
       if (method == 'POST') {
+        print("Estoy agregando porque no estaba agregado");
         response = await http.post(
           url,
           headers: {
@@ -61,6 +62,7 @@ class HomeApi {
           body: body,
         );
       } else {
+        print("Estoy elimnando porque estaba agregado");
         response = await http.delete(
           url,
           headers: {

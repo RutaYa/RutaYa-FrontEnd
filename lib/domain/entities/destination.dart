@@ -4,7 +4,7 @@ class Destination {
   final String location;
   final String description;
   final String imageUrl;
-  final bool isFavorite;
+  bool isFavorite;
   final int? favoritesCount; // Opcional, solo aparece en popular
 
   Destination({

@@ -14,14 +14,11 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State {
   final TextEditingController _searchController = TextEditingController();
-
-  // Set para manejar favoritos
-  final Set<int> _favorites = <int>{};
 
   // Variables para almacenar los datos del API
   HomeResponse? homeData;
@@ -34,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadHomeData();
   }
 
-  Future<void> _loadHomeData() async {
+  Future _loadHomeData() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -50,8 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
           homeData = homeResponse;
           isLoading = false;
         });
-        // Cargar favoritos iniciales después de obtener los datos
-        _loadInitialFavorites();
       } else {
         setState(() {
           isLoading = false;
@@ -66,53 +61,42 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _loadInitialFavorites() {
-    if (homeData == null) return;
+  Future _toggleFavorite(Destination destination) async {
+    final alterFavoriteUseCase = getIt<AlterFavoriteUseCase>();
 
-    // Cargar favoritos de sugerencias
-    for (var destination in homeData!.suggestions) {
-      if (destination.isFavorite) {
-        _favorites.add(destination.id);
-      }
-    }
+    final success = await alterFavoriteUseCase.alterFavorite(
+        destination.id,
+        destination.isFavorite
+    );
 
-    // Cargar favoritos de populares
-    for (var destination in homeData!.popular) {
-      if (destination.isFavorite) {
-        _favorites.add(destination.id);
-      }
-    }
-
-    // Cargar favoritos de categorías
-    for (var category in homeData!.categories) {
-      for (var destination in category.destinations) {
-        if (destination.isFavorite) {
-          _favorites.add(destination.id);
-        }
-      }
+    if (success) {
+      setState(() {
+        destination.isFavorite = !destination.isFavorite;
+      });
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al actualizar favorito'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  Future<void> _toggleFavorite(int destinationId, bool isFavorite) async {
-    final alterFavoriteUseCase = getIt<AlterFavoriteUseCase>();
+  // Método para navegar al detalle y manejar el resultado
+  Future<void> _navigateToDetail(Destination destination, String category) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DestinationDetailScreen(
+          destination: destination,
+          categoryName: category,
+        ),
+      ),
+    );
 
-    final alterFavoriteResponse = await alterFavoriteUseCase.alterFavorite(destinationId, isFavorite);
-
-    if (alterFavoriteResponse) {
-      setState(() {
-        if (_favorites.contains(destinationId)) {
-          _favorites.remove(destinationId);
-        } else {
-          _favorites.add(destinationId);
-        }
-      });
-    }else{
-      print("Hubo un error con esta accion");
-    }
-
-
-    // Aquí podrías hacer una llamada al API para actualizar el favorito
-    // _updateFavoriteOnServer(destinationId, _favorites.contains(destinationId));
+    // Siempre actualizar cuando regrese (sin importar si cambió o no)
+    setState(() {});
   }
 
   @override
@@ -332,20 +316,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDestinationCard(Destination destination, String category) {
-    final isFavorite = _favorites.contains(destination.id);
-
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DestinationDetailScreen(
-              destination: destination,
-                categoryName: category
-            ),
-          ),
-        );
-      },
+      onTap: () => _navigateToDetail(destination, category),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -449,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 8,
                 right: 8,
                 child: GestureDetector(
-                  onTap: () => _toggleFavorite(destination.id, destination.isFavorite),
+                  onTap: () => _toggleFavorite(destination),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -464,8 +436,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? const Color(0xFFFD0000) : Colors.grey[600],
+                      destination.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: destination.isFavorite ? const Color(0xFFFD0000) : Colors.grey[600],
                       size: 16,
                     ),
                   ),

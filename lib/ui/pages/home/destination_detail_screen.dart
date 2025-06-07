@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/destination.dart';
+import '../../../application/alter_favorite_use_case.dart';
+import '../../../main.dart';
 
 class DestinationDetailScreen extends StatefulWidget {
   final Destination destination;
@@ -16,18 +18,33 @@ class DestinationDetailScreen extends StatefulWidget {
 }
 
 class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
-  bool _isFavorite = false;
 
   @override
   void initState() {
     super.initState();
-    _isFavorite = widget.destination.isFavorite;
   }
 
-  void _toggleFavorite() {
-    setState(() {
-      _isFavorite = !_isFavorite;
-    });
+  Future<void> _toggleFavorite() async {
+    final alterFavoriteUseCase = getIt<AlterFavoriteUseCase>();
+    print(widget.destination.isFavorite);
+
+    final success = await alterFavoriteUseCase.alterFavorite(
+        widget.destination.id,
+        widget.destination.isFavorite
+    );
+
+    if (success) {
+      setState(() {
+        widget.destination.isFavorite = !widget.destination.isFavorite;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al actualizar favorito'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _onConsultarPressed() {
@@ -63,8 +80,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: _isFavorite ? Colors.red : Colors.black,
+              widget.destination.isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: widget.destination.isFavorite ? Colors.red : Colors.black,
             ),
             onPressed: _toggleFavorite,
           ),
