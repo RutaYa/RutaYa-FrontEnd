@@ -7,6 +7,7 @@ import '../../../domain/entities/destination.dart';
 import '../../../domain/entities/category.dart';
 import '../../../domain/entities/home_response.dart';
 import '../../../application/get_home_data_use_case.dart';
+import '../../../application/alter_favorite_use_case.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -91,14 +92,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _toggleFavorite(int destinationId) {
-    setState(() {
-      if (_favorites.contains(destinationId)) {
-        _favorites.remove(destinationId);
-      } else {
-        _favorites.add(destinationId);
-      }
-    });
+  Future<void> _toggleFavorite(int destinationId, bool isFavorite) async {
+    final alterFavoriteUseCase = getIt<AlterFavoriteUseCase>();
+
+    final alterFavoriteResponse = await alterFavoriteUseCase.alterFavorite(destinationId, isFavorite);
+
+    if (alterFavoriteResponse) {
+      setState(() {
+        if (_favorites.contains(destinationId)) {
+          _favorites.remove(destinationId);
+        } else {
+          _favorites.add(destinationId);
+        }
+      });
+    }else{
+      print("Hubo un error con esta accion");
+    }
+
 
     // Aquí podrías hacer una llamada al API para actualizar el favorito
     // _updateFavoriteOnServer(destinationId, _favorites.contains(destinationId));
@@ -431,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 8,
                 right: 8,
                 child: GestureDetector(
-                  onTap: () => _toggleFavorite(destination.id),
+                  onTap: () => _toggleFavorite(destination.id, destination.isFavorite),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(

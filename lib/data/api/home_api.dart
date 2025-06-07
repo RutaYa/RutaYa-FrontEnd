@@ -30,4 +30,56 @@ class HomeApi {
       return null;
     }
   }
+
+  Future<bool> alterFavorite(int destinationId, bool isFavorite) async {
+    final userId = 2;
+
+    // Determinar URL y método según el estado del favorito
+    final url = Uri.parse(
+      isFavorite
+          ? '$baseUrl/favorites/remove/'
+          : '$baseUrl/favorites/add/',
+    );
+
+    final method = isFavorite ? 'DELETE' : 'POST';
+
+    final body = json.encode({
+      "userId": userId,
+      "destinationId": destinationId,
+    });
+
+    try {
+      http.Response response;
+
+      // Ejecutar la solicitud HTTP adecuada
+      if (method == 'POST') {
+        response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: body,
+        );
+      } else {
+        response = await http.delete(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: body,
+        );
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        print('Error ${response.statusCode}: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception en HomeApi.alterFavorite: $e');
+      return false;
+    }
+  }
+
 }

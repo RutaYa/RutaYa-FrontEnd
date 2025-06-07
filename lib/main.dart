@@ -4,6 +4,7 @@ import 'application/login_use_case.dart';
 import 'core/routes/app_routes.dart';
 import 'application/register_use_case.dart';
 import 'application/get_home_data_use_case.dart';
+import 'application/alter_favorite_use_case.dart';
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
 import 'domain/repositories/user_repository.dart';
@@ -35,6 +36,9 @@ void main() {
   );
   getIt.registerLazySingleton<GetHomeDataUseCase>(() =>
       GetHomeDataUseCase(getIt<HomeRepository>())
+  );
+  getIt.registerLazySingleton<AlterFavoriteUseCase>(() =>
+      AlterFavoriteUseCase(getIt<HomeRepository>())
   );
 
   runApp(const MyApp());

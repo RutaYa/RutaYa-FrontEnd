@@ -11,4 +11,8 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<HomeResponse?> getHomeData() async {
     return await homeApi.getHomeData();
   }
+  @override
+  Future<bool> alterFavorite(int destinationId, bool isFavorite) async {
+    return await homeApi.alterFavorite(destinationId, isFavorite);
+  }
 }
