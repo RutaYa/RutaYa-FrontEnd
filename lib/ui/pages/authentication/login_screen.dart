@@ -64,7 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
         if (loginResponse!=null) {
           // Simulamos una llamada a la API
           //await Future.delayed(const Duration(seconds: 2));
-          _showSuccessSnackBar("Inicio de sesion exitoso!.");
 
           print(loginResponse.message);
           print(loginResponse.user.firstName);
