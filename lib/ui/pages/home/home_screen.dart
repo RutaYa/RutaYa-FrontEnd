@@ -8,6 +8,7 @@ import '../../../domain/entities/category.dart';
 import '../../../domain/entities/home_response.dart';
 import '../../../application/get_home_data_use_case.dart';
 import '../../../application/alter_favorite_use_case.dart';
+import 'destination_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -218,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (homeData!.suggestions.isNotEmpty) ...[
                 _buildSectionTitle("Sugerencias para ti:", showViewAll: true),
                 const SizedBox(height: 15),
-                _buildHorizontalDestinationList(homeData!.suggestions),
+                _buildHorizontalDestinationList(homeData!.suggestions, "Sugerencia"),
                 const SizedBox(height: 30),
               ],
 
@@ -226,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (homeData!.popular.isNotEmpty) ...[
                 _buildSectionTitle("Más populares:", showViewAll: true),
                 const SizedBox(height: 15),
-                _buildHorizontalDestinationList(homeData!.popular),
+                _buildHorizontalDestinationList(homeData!.popular, "Popular"),
                 const SizedBox(height: 30),
               ],
 
@@ -309,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHorizontalDestinationList(List<Destination> destinations) {
+  Widget _buildHorizontalDestinationList(List<Destination> destinations, String category) {
     return SizedBox(
       height: 200, // Altura fija para las tarjetas
       child: ListView.builder(
@@ -322,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: SizedBox(
               width: 160, // Ancho fijo para cada tarjeta
-              child: _buildDestinationCard(destinations[index]),
+              child: _buildDestinationCard(destinations[index], category),
             ),
           );
         },
@@ -330,13 +331,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDestinationCard(Destination destination) {
+  Widget _buildDestinationCard(Destination destination, String category) {
     final isFavorite = _favorites.contains(destination.id);
 
     return GestureDetector(
       onTap: () {
-        // Navegar a detalles del destino
-        print('Navegando a ${destination.name}');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DestinationDetailScreen(
+              destination: destination,
+                categoryName: category
+            ),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -572,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 15),
 
         // Lista horizontal de destinos ocultos
-        _buildHorizontalDestinationList(category.destinations),
+        _buildHorizontalDestinationList(category.destinations, category.name),
 
         const SizedBox(height: 30),
       ],
@@ -585,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildSectionTitle(category.name, showViewAll: true),
         const SizedBox(height: 15),
-        _buildHorizontalDestinationList(category.destinations),
+        _buildHorizontalDestinationList(category.destinations, category.name),
         const SizedBox(height: 30),
       ],
     );
