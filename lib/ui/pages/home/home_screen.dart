@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../domain/entities/destination.dart';
+import '../../../domain/entities/category.dart';
+import '../../../domain/entities/home_response.dart';
+import '../../../application/get_home_data_use_case.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,9 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Set<int> _favorites = <int>{};
 
   // Variables para almacenar los datos del API
-  List<Destination> suggestions = [];
-  List<Destination> popular = [];
-  List<Category> categories = [];
+  HomeResponse? homeData;
   bool isLoading = true;
   String? errorMessage;
 
@@ -30,72 +33,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadHomeData() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    final getHomeDataUseCase = getIt<GetHomeDataUseCase>();
+
     try {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
+      final HomeResponse? homeResponse = await getHomeDataUseCase.getHomeData();
 
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/v1/home/2/'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-
+      if (homeResponse != null) {
         setState(() {
-          // Cargar sugerencias
-          suggestions = (jsonData['suggestions'] as List)
-              .map((item) => Destination.fromJson(item))
-              .toList();
-
-          // Cargar populares
-          popular = (jsonData['popular'] as List)
-              .map((item) => Destination.fromJson(item))
-              .toList();
-
-          // Cargar categorías
-          categories = (jsonData['categories'] as List)
-              .map((item) => Category.fromJson(item))
-              .toList();
-
-          // Cargar favoritos iniciales
-          _loadInitialFavorites();
-
+          homeData = homeResponse;
           isLoading = false;
         });
+        // Cargar favoritos iniciales después de obtener los datos
+        _loadInitialFavorites();
       } else {
         setState(() {
-          errorMessage = 'Error al cargar los datos: ${response.statusCode}';
           isLoading = false;
+          errorMessage = 'Error al cargar los datos';
         });
       }
     } catch (e) {
       setState(() {
-        errorMessage = 'Error de conexión: $e';
         isLoading = false;
+        errorMessage = 'Error: $e';
       });
     }
   }
 
   void _loadInitialFavorites() {
+    if (homeData == null) return;
+
     // Cargar favoritos de sugerencias
-    for (var destination in suggestions) {
+    for (var destination in homeData!.suggestions) {
       if (destination.isFavorite) {
         _favorites.add(destination.id);
       }
     }
 
     // Cargar favoritos de populares
-    for (var destination in popular) {
+    for (var destination in homeData!.popular) {
       if (destination.isFavorite) {
         _favorites.add(destination.id);
       }
     }
 
     // Cargar favoritos de categorías
-    for (var category in categories) {
+    for (var category in homeData!.categories) {
       for (var destination in category.destinations) {
         if (destination.isFavorite) {
           _favorites.add(destination.id);
@@ -132,7 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ? const Center(child: CircularProgressIndicator())
             : errorMessage != null
             ? _buildErrorWidget()
-            : _buildContent(),
+            : homeData != null
+            ? _buildContent()
+            : _buildEmptyWidget(),
       ),
     );
   }
@@ -166,6 +155,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildEmptyWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.travel_explore,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No hay datos disponibles',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadHomeData,
+            child: const Text('Cargar datos'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContent() {
     return RefreshIndicator(
       onRefresh: _loadHomeData,
@@ -187,23 +205,23 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 30),
 
               // Sugerencias para ti
-              if (suggestions.isNotEmpty) ...[
+              if (homeData!.suggestions.isNotEmpty) ...[
                 _buildSectionTitle("Sugerencias para ti:", showViewAll: true),
                 const SizedBox(height: 15),
-                _buildHorizontalDestinationList(suggestions),
+                _buildHorizontalDestinationList(homeData!.suggestions),
                 const SizedBox(height: 30),
               ],
 
               // Más populares
-              if (popular.isNotEmpty) ...[
+              if (homeData!.popular.isNotEmpty) ...[
                 _buildSectionTitle("Más populares:", showViewAll: true),
                 const SizedBox(height: 15),
-                _buildHorizontalDestinationList(popular),
+                _buildHorizontalDestinationList(homeData!.popular),
                 const SizedBox(height: 30),
               ],
 
               // Categorías
-              ...categories.map((category) {
+              ...homeData!.categories.map((category) {
                 if (category.name == "Destinos Ocultoss") {
                   // Sección especial para destinos ocultos
                   return _buildHiddenGemsSection(category);
@@ -560,61 +578,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildHorizontalDestinationList(category.destinations),
         const SizedBox(height: 30),
       ],
-    );
-  }
-}
-
-// Modelos de datos actualizados para el API
-class Destination {
-  final int id;
-  final String name;
-  final String location;
-  final String description;
-  final String imageUrl;
-  final bool isFavorite;
-  final int? favoritesCount;
-
-  Destination({
-    required this.id,
-    required this.name,
-    required this.location,
-    required this.description,
-    required this.imageUrl,
-    this.isFavorite = false,
-    this.favoritesCount,
-  });
-
-  factory Destination.fromJson(Map<String, dynamic> json) {
-    return Destination(
-      id: json['id'],
-      name: json['name'],
-      location: json['location'],
-      description: json['description'],
-      imageUrl: json['image_url'] ?? '',
-      isFavorite: json['isFavorite'] ?? false,
-      favoritesCount: json['favorites_count'],
-    );
-  }
-}
-
-class Category {
-  final int id;
-  final String name;
-  final List<Destination> destinations;
-
-  Category({
-    required this.id,
-    required this.name,
-    required this.destinations,
-  });
-
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: json['id'],
-      name: json['name'],
-      destinations: (json['destinations'] as List)
-          .map((item) => Destination.fromJson(item))
-          .toList(),
     );
   }
 }

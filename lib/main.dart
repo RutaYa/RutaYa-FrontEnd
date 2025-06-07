@@ -3,19 +3,27 @@ import 'package:get_it/get_it.dart';
 import 'application/login_use_case.dart';
 import 'core/routes/app_routes.dart';
 import 'application/register_use_case.dart';
+import 'application/get_home_data_use_case.dart';
 import 'data/repositories/user_repository_impl.dart';
+import 'data/repositories/home_repository_impl.dart';
 import 'domain/repositories/user_repository.dart';
+import 'domain/repositories/home_repository.dart';
 import 'data/api/user_api.dart';
+import 'data/api/home_api.dart';
 
 final getIt = GetIt.instance;
 
 void main() {
   // Data Layer - APIs
   getIt.registerLazySingleton<UserApi>(() => UserApi());
+  getIt.registerLazySingleton<HomeApi>(() => HomeApi());
 
   // Data Layer - Repositories
   getIt.registerLazySingleton<UserRepository>(() =>
       UserRepositoryImpl(getIt<UserApi>())
+  );
+  getIt.registerLazySingleton<HomeRepository>(() =>
+      HomeRepositoryImpl(getIt<HomeApi>())
   );
 
   // Domain Layer (use cases)
@@ -24,6 +32,9 @@ void main() {
   );
   getIt.registerLazySingleton<LoginUseCase>(() =>
       LoginUseCase(getIt<UserRepository>())
+  );
+  getIt.registerLazySingleton<GetHomeDataUseCase>(() =>
+      GetHomeDataUseCase(getIt<HomeRepository>())
   );
 
   runApp(const MyApp());
