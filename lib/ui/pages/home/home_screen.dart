@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State {
+  //TODO: Nuevo Screen de busqueda de destinos
   final TextEditingController _searchController = TextEditingController();
 
   // Variables para almacenar los datos del API
