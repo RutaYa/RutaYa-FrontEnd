@@ -9,6 +9,7 @@ import '../../../domain/entities/home_response.dart';
 import '../../../application/get_home_data_use_case.dart';
 import '../../../application/alter_favorite_use_case.dart';
 import 'destination_detail_screen.dart';
+import 'destination_search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +19,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State {
-  //TODO: Nuevo Screen de busqueda de destinos
   final TextEditingController _searchController = TextEditingController();
 
   // Variables para almacenar los datos del API
@@ -72,9 +72,13 @@ class _HomeScreenState extends State {
 
     if (success) {
       setState(() {
+        // Actualizar el destino local primero
         destination.isFavorite = !destination.isFavorite;
+
+        // Sincronizar en todas las listas
+        _syncFavoriteStatusAcrossAllLists(destination);
       });
-    }else{
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error al actualizar favorito'),
@@ -84,7 +88,6 @@ class _HomeScreenState extends State {
     }
   }
 
-  // Método para navegar al detalle y manejar el resultado
   Future<void> _navigateToDetail(Destination destination, String category) async {
     await Navigator.push(
       context,
@@ -96,8 +99,57 @@ class _HomeScreenState extends State {
       ),
     );
 
-    // Siempre actualizar cuando regrese (sin importar si cambió o no)
-    setState(() {});
+    // Actualizar el estado del favorito en TODAS las listas
+    setState(() {
+      _syncFavoriteStatusAcrossAllLists(destination);
+    });
+  }
+
+  void _syncFavoriteStatusAcrossAllLists(Destination updatedDestination) {
+    if (homeData == null) return;
+
+    // Actualizar en suggestions
+    for (Destination dest in homeData!.suggestions) {
+      if (dest.id == updatedDestination.id) {
+        dest.isFavorite = updatedDestination.isFavorite;
+      }
+    }
+
+    // Actualizar en popular
+    for (Destination dest in homeData!.popular) {
+      if (dest.id == updatedDestination.id) {
+        dest.isFavorite = updatedDestination.isFavorite;
+      }
+    }
+
+    // Actualizar en categorías
+    for (Category category in homeData!.categories) {
+      for (Destination dest in category.destinations) {
+        if (dest.id == updatedDestination.id) {
+          dest.isFavorite = updatedDestination.isFavorite;
+        }
+      }
+    }
+  }
+
+  Future<void> navigateToDestinationSearch() async {
+    if (homeData != null) {
+      final updatedHomeResponse = await Navigator.push<HomeResponse>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DestinationSearchScreen(
+            homeResponse: homeData!,
+          ),
+        ),
+      );
+
+      // Si regresa un HomeResponse actualizado, actualizar el estado
+      if (updatedHomeResponse != null) {
+        setState(() {
+          homeData = updatedHomeResponse;
+        });
+      }
+    }
   }
 
   @override
@@ -260,20 +312,26 @@ class _HomeScreenState extends State {
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Buscar destinos en Perú...',
-          hintStyle: TextStyle(color: Colors.grey[500]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+    return GestureDetector(
+      onTap: () {
+        navigateToDestinationSearch();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: AbsorbPointer( // Evita que el TextField sea editable
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Buscar destinos en Perú...',
+              hintStyle: TextStyle(color: Colors.grey[500]),
+              prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            ),
+          ),
         ),
       ),
     );
