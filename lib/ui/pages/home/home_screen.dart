@@ -12,6 +12,7 @@ import '../../../data/repositories/local_storage_service.dart';
 import '../../../domain/entities/user.dart';
 import 'destination_detail_screen.dart';
 import 'destination_search_screen.dart';
+import 'calendar_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -324,9 +325,12 @@ class _HomeScreenState extends State {
         // Icono pulsable de calendario
         GestureDetector(
           onTap: () {
-            // Aquí va la acción que quieras realizar
-            print('Ícono de calendario presionado');
-            // Navigator.pushNamed(context, '/calendar'); por ejemplo
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CalendarScreen()
+              ),
+            );
           },
           child: Icon(
             Icons.calendar_today,
