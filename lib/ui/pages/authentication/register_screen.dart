@@ -113,6 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        toolbarHeight: 30,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () {
@@ -137,24 +138,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título principal
-                  const Text(
-                    'Crear cuenta',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFD0000),
+                  Center(
+                    child: Image.asset(
+                      'assets/images/rutasya_logo.png',
+                      height: 100,
+                      color: Color(0xFFFD0000), // Aplica el tinte rojo al logo
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
                   // Subtítulo
-                  const Text(
-                    'Regístrate para comenzar',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
+                  Center(
+                    child: const Text(
+                      'Regístrate para comenzar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
 

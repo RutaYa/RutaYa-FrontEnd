@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.login,  // Cambiado a la ruta de bienvenida
+      initialRoute: AppRoutes.loading,  // Cambiado a la ruta de bienvenida
       routes: AppRoutes.routes,
     );
   }

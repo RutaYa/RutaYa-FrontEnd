@@ -8,9 +8,11 @@ import '../../ui/pages/community/community_screen.dart';
 import '../../ui/pages/profile/profile_screen.dart';
 import '../../ui/pages/authentication/login_screen.dart';
 import '../../ui/pages/authentication/register_screen.dart';
+import '../../ui/pages/loading_screen.dart';
 
 class AppRoutes {
   // Rutas de autenticación
+  static const String loading = '/loading';
   static const String login = '/login';
   static const String register = '/register';
 
@@ -23,6 +25,7 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> get routes => {
     // Rutas de autenticación
+    loading: (_) => const LoadingScreen(),
     login: (_) => const LoginScreen(),
     register: (_) => const RegisterScreen(),
 
