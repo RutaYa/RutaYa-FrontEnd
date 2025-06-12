@@ -267,6 +267,11 @@ class _HomeScreenState extends State {
                 const SizedBox(height: 30),
               ],
 
+              // Destinos Ocultos (categoría ID 1) - después de sugerencias
+              ...homeData!.categories.where((category) => category.id == 1).map((category) {
+                return _buildHiddenGemsSection(category);
+              }).toList(),
+
               // Más populares
               if (homeData!.popular.isNotEmpty) ...[
                 _buildSectionTitle("Más populares:", showViewAll: true),
@@ -275,15 +280,9 @@ class _HomeScreenState extends State {
                 const SizedBox(height: 30),
               ],
 
-              // Categorías
-              ...homeData!.categories.map((category) {
-                if (category.name == "Destinos Ocultoss") {
-                  // Sección especial para destinos ocultos
-                  return _buildHiddenGemsSection(category);
-                } else {
-                  // Secciones normales para otras categorías
-                  return _buildCategorySection(category);
-                }
+              // Otras categorías (todas excepto ID 1)
+              ...homeData!.categories.where((category) => category.id != 1).map((category) {
+                return _buildCategorySection(category);
               }).toList(),
 
               const SizedBox(height: 20),
