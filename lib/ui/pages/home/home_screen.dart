@@ -8,6 +8,8 @@ import '../../../domain/entities/category.dart';
 import '../../../domain/entities/home_response.dart';
 import '../../../application/get_home_data_use_case.dart';
 import '../../../application/alter_favorite_use_case.dart';
+import '../../../data/repositories/local_storage_service.dart';
+import '../../../domain/entities/user.dart';
 import 'destination_detail_screen.dart';
 import 'destination_search_screen.dart';
 
@@ -25,6 +27,8 @@ class _HomeScreenState extends State {
   HomeResponse? homeData;
   bool isLoading = true;
   String? errorMessage;
+  final LocalStorageService _storageService = LocalStorageService();
+  User? currentUser;
 
   @override
   void initState() {
@@ -38,6 +42,8 @@ class _HomeScreenState extends State {
       errorMessage = null;
     });
 
+    final user = await _storageService.getCurrentUser();
+
     final getHomeDataUseCase = getIt<GetHomeDataUseCase>();
 
     try {
@@ -45,6 +51,7 @@ class _HomeScreenState extends State {
 
       if (homeResponse != null) {
         setState(() {
+          currentUser = user;
           homeData = homeResponse;
           isLoading = false;
         });
@@ -288,23 +295,44 @@ class _HomeScreenState extends State {
   }
 
   Widget _buildHeader() {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "¡Hola, Viajero! 👋",
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+        // Texto de bienvenida y subtítulo
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hola ${currentUser?.firstName ?? 'Viajero'} ! 👋',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              "Descubre los tesoros ocultos del Perú",
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 5),
-        Text(
-          "Descubre los tesoros ocultos del Perú",
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            color: Colors.grey[600],
+
+        // Icono pulsable de calendario
+        GestureDetector(
+          onTap: () {
+            // Aquí va la acción que quieras realizar
+            print('Ícono de calendario presionado');
+            // Navigator.pushNamed(context, '/calendar'); por ejemplo
+          },
+          child: Icon(
+            Icons.calendar_today,
+            color: Color(0xFF303030),
+            size: 28,
           ),
         ),
       ],

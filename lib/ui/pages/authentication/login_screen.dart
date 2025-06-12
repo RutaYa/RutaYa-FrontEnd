@@ -6,6 +6,7 @@ import '../../../core/routes/app_routes.dart';
 import '../../../data/repositories/local_storage_service.dart';
 import '../../../application/login_use_case.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../data/repositories/local_storage_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -65,11 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Simulamos una llamada a la API
           //await Future.delayed(const Duration(seconds: 2));
 
-          print(loginResponse.message);
-          print(loginResponse.user.firstName);
-          // Por ahora, simulamos un login exitoso
-          //localStorageService.clearAllTables(); // limpiar mensajes
-          //localStorageService.insertSamplePets(); // crear ejemplos
+          await localStorageService.saveUser(loginResponse.user);
 
           setState(() {
             _isLoading=false;

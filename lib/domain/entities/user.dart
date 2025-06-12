@@ -14,7 +14,7 @@ class User {
   // Método para crear una instancia de User desde un JSON
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['user_id'].toString(), // Convertir a String
+      id: json['id'].toString(), // Convertir a String
       firstName: json['first_name'], // Mapea 'nombres' a 'firstName'
       lastName: json['last_name'], // Mapea 'apellidos' a 'lastName'
       email: json['email'], // Mapea 'email' a 'email'

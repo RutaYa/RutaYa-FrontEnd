@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'common/api_constants.dart';
 import '../../domain/entities/home_response.dart';
+import '../repositories/local_storage_service.dart';
 
 class HomeApi {
+  final localStorageService = LocalStorageService();
   final String baseUrl = ApiConstants.baseUrl;
 
   Future<HomeResponse?> getHomeData() async {
-    final userId = 2;
+    final userId = await localStorageService.getCurrentUserId();
+
+    if (userId == null) return null;
 
     try {
       final response = await http.get(
@@ -32,7 +36,10 @@ class HomeApi {
   }
 
   Future<bool> alterFavorite(int destinationId, bool isFavorite) async {
-    final userId = 2;
+
+    final userId = await localStorageService.getCurrentUserId();
+
+    if (userId == null) return false;
 
     // Determinar URL y método según el estado del favorito
     final url = Uri.parse(
