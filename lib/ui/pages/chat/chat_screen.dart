@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:rutaya/domain/entities/user_preferences.dart';
 import '../../../data/repositories/local_storage_service.dart';
 import '../../../domain/entities/message.dart';
+import '../../../domain/entities/destination.dart';
+import '../../../main.dart';
+import '../../../application/send_message_use_case.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  final Destination? destination;
+
+  const ChatScreen({Key? key, this.destination}) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -15,6 +21,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final localStorageService = LocalStorageService();
   List<Message> messages = [];
   bool _isLoading = true;
+  bool _isBotTyping = false;
   int _messageIdCounter = 1;
 
   @override
@@ -32,6 +39,12 @@ class _ChatScreenState extends State<ChatScreen> {
       // Intentar cargar mensajes existentes de la BD
       final existingMessages = await localStorageService.getAllMessages();
 
+      if(widget.destination!=null){
+        setState(() {
+          _messageController.text="Me gustaria saber mas sobre ${widget.destination?.name}";
+        });
+      }
+
       if (existingMessages.isNotEmpty) {
         // Si hay mensajes existentes, mostrarlos
         setState(() {
@@ -42,6 +55,8 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         // Si no hay mensajes, generar mensaje de bienvenida
         await _generateAndStoreWelcomeMessage();
+
+
       }
 
       _scrollToBottom();
@@ -54,8 +69,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _generateAndStoreWelcomeMessage() async {
     try {
-      //final pets = await localStorageService.getPreferences();
-      final welcomeMessage = await _generateWelcomeMessage();
+      final userPreferences = await localStorageService.getCurrentUserPreferences();
+      final welcomeMessage = await _generateWelcomeMessage(userPreferences!);
 
       // Guardar el mensaje de bienvenida en la BD
       await _storeMessage(welcomeMessage);
@@ -70,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
       // Crear mensaje por defecto si falla todo
       final defaultMessage = Message(
         id: 1,
-        message: "¡Hola! Soy el asistente virtual de rutasYa. ¿En qué puedo ayudarte?",
+        message : "¡Hola! Soy el asistente virtual de TuRuta. ¿En qué puedo ayudarte hoy?",
         isBot: true,
         timestamp: DateTime.now().toIso8601String(),
       );
@@ -85,10 +100,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<Message> _generateWelcomeMessage() async {
+  Future<Message> _generateWelcomeMessage(UserPreferences userPreferences) async {
     String message;
 
-    message = "¡Hola! Soy el asistente virtual de RutasYa!.";
+    message = "¡Hola! Soy el asistente virtual de TuRuta. ¿En qué puedo ayudarte hoy?";
 
     return Message(
       id: 1,
@@ -106,57 +121,59 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _sendMessage() {
+  void _sendMessage() async{
     if (_messageController.text.trim().isEmpty) return;
 
     final newMessage = Message(
-      id: _messageIdCounter++,
+      id: _messageIdCounter+=2,
       message: _messageController.text.trim(),
       isBot: false,
       timestamp: DateTime.now().toIso8601String(),
     );
 
-    setState(() {
-      messages.add(newMessage);
-    });
-
-    // Guardar mensaje del usuario en la BD
-    _storeMessage(newMessage);
-
     _messageController.clear();
-    _scrollToBottom();
 
-    // Simular respuesta del bot después de un delay
-    _simulateBotResponse();
-  }
-
-  void _simulateBotResponse() {
-    Future.delayed(const Duration(seconds: 2), () {
-      final botResponses = [
-        "Entiendo tu preocupación.",
-        "Es importante conocer el mundo",
-      ];
-
-      final randomResponse = botResponses[
-      DateTime.now().millisecond % botResponses.length
-      ];
-
-      final botMessage = Message(
-        id: _messageIdCounter++,
-        message: randomResponse,
-        isBot: true,
-        timestamp: DateTime.now().toIso8601String(),
-      );
-
+    try {
       setState(() {
-        messages.add(botMessage);
+        _isBotTyping = true;
       });
 
-      // Guardar respuesta del bot en la BD
-      _storeMessage(botMessage);
+      final sendMessageUseCase = getIt<SendMessageUseCase>();
+      final messageResponse = await sendMessageUseCase.sendMessage(newMessage);
 
+      setState(() {
+        _isBotTyping = false;
+      });
+
+      if (messageResponse != null) {
+        _storeMessage(newMessage);
+        setState(() {
+          messages.add(newMessage);
+        });
+
+        _storeMessage(messageResponse);
+        setState(() {
+          messages.add(messageResponse);
+        });
+
+      } else {
+        _showError('No se pudo registrar la mascota. Intenta nuevamente.');
+      }
       _scrollToBottom();
-    });
+
+    } catch (e) {
+      setState(() {
+        _isBotTyping = false;
+      });
+      _showError('Error al guardar la mascota: ${e.toString()}');
+    }
+
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void _scrollToBottom() {
@@ -238,7 +255,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'RutasYa Asistente virtual',
+                  'RutasYa Asistente',
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 17,

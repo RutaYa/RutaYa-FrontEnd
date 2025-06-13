@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/entities/user_preferences.dart';
 
 
 class LocalStorageService {
@@ -49,6 +50,21 @@ class LocalStorageService {
             timestamp TEXT
           )
         ''');
+
+        // Nueva tabla para UserPreferences
+        await db.execute('''
+        CREATE TABLE IF NOT EXISTS UserPreferences (
+          user_id TEXT PRIMARY KEY,
+          birth_date TEXT,
+          gender TEXT,
+          travel_interests TEXT,
+          preferred_environment TEXT,
+          travel_style TEXT,
+          budget_range TEXT,
+          adrenaline_level INTEGER,
+          wants_hidden_places INTEGER
+        )
+      ''');
 
         print("Database tables created successfully.");
       },
@@ -158,5 +174,36 @@ class LocalStorageService {
       orderBy: 'timestamp ASC',
     );
     return maps.map((json) => Message.fromDb(json)).toList();
+  }
+
+  // Método para guardar las preferencias del usuario
+  Future saveUserPreferences(UserPreferences preferences) async {
+    final db = await database;
+
+    // Limpiar la tabla antes de insertar nuevas preferencias
+    await db.delete('UserPreferences');
+
+    // Insertar las nuevas preferencias
+    await db.insert(
+      'UserPreferences',
+      preferences.toDatabaseMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Método para obtener las preferencias del usuario actual
+  Future<UserPreferences?> getCurrentUserPreferences() async {
+    final db = await database;
+    var results = await db.query('UserPreferences', limit: 1);
+
+    if (results.isNotEmpty) {
+      return UserPreferences.fromDatabase(results.first);
+    }
+    return null;
+  }
+
+  Future deleteUserPreferences() async {
+    final db = await database;
+    await db.delete('UserPreferences');
   }
 }

@@ -7,15 +7,21 @@ import 'application/get_home_data_use_case.dart';
 import 'application/alter_favorite_use_case.dart';
 import 'application/get_travel_dates_use_case.dart';
 import 'application/save_travel_dates_use_case.dart';
+import 'application/send_message_use_case.dart';
+import 'application/get_user_preferences.dart';
+import 'application/save_user_preferences_use_case.dart';
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
 import 'data/repositories/travels_repository_impl.dart';
+import 'data/repositories/preferences_repository_impl.dart';
 import 'domain/repositories/user_repository.dart';
 import 'domain/repositories/home_repository.dart';
 import 'domain/repositories/travels_repository.dart';
+import 'domain/repositories/preferences_repository.dart';
 import 'data/api/user_api.dart';
 import 'data/api/home_api.dart';
 import 'data/api/travel_api.dart';
+import 'data/api/preference_api.dart';
 
 final getIt = GetIt.instance;
 

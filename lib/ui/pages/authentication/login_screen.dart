@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../main.dart';
 import 'register_screen.dart';
+import '../preferences_form_screen.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../data/repositories/local_storage_service.dart';
 import '../../../application/login_use_case.dart';
@@ -72,12 +73,25 @@ class _LoginScreenState extends State<LoginScreen> {
             _isLoading=false;
           });
 
-          // Registro exitoso → redirige a la siguiente pantalla
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.main,
-                (route) => false, // Esto elimina todas las rutas anteriores
-          );
+          if(loginResponse.preferences!=null){
+            // Registro exitoso → redirige a la siguiente pantalla
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.main,
+                  (route) => false, // Esto elimina todas las rutas anteriores
+            );
+          }else{
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PreferencesFormScreen(
+                  isFirstTime: true,
+                ),
+              ),
+            );
+          }
+
+
         } else {
           setState(() {
             _isLoading=false;
