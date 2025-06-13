@@ -52,17 +52,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
       final List<String> dateStrings = await getTravelDatesUseCase.getTravelDates();
 
+      // Debug: Imprime las fechas recibidas del backend
+      print('Fechas recibidas del backend: $dateStrings');
+
       if (dateStrings.isNotEmpty) {
-        // Convertir las fechas string a DateTime
+        // Convertir las fechas string a DateTime normalizadas
         final Set<DateTime> loadedDates = {};
         for (String dateString in dateStrings) {
           try {
             final DateTime date = DateTime.parse(dateString);
-            loadedDates.add(DateTime(date.year, date.month, date.day));
+            // IMPORTANTE: Normalizar la fecha eliminando la información de hora
+            final DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+            loadedDates.add(normalizedDate);
+
+            // Debug: Imprime cada fecha normalizada
+            print('Fecha normalizada: $normalizedDate');
           } catch (e) {
-            print('Error parsing date: $dateString');
+            print('Error parsing date: $dateString - Error: $e');
           }
         }
+
+        // Debug: Imprime el conjunto final de fechas
+        print('Fechas cargadas finales: $loadedDates');
 
         setState(() {
           // Actualizar tanto las fechas originales como las seleccionadas
@@ -72,6 +83,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           _selectedDates.addAll(loadedDates);
           _isInitialLoading = false;
         });
+
+        // Debug: Verificar el estado después del setState
+        print('Estado después de setState - _selectedDates: $_selectedDates');
+
       } else {
         setState(() {
           _originalDates.clear();
@@ -89,38 +104,49 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    // Normalizar la fecha seleccionada
+    final DateTime normalizedSelectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+
     setState(() {
       _focusedDay = focusedDay;
 
       if (_isRangeMode) {
         // Modo de selección por rango
         if (_rangeStart == null) {
-          _rangeStart = selectedDay;
+          _rangeStart = normalizedSelectedDay;
           _rangeEnd = null;
-        } else if (_rangeEnd == null && selectedDay.isAfter(_rangeStart!)) {
-          _rangeEnd = selectedDay;
+        } else if (_rangeEnd == null && normalizedSelectedDay.isAfter(_rangeStart!)) {
+          _rangeEnd = normalizedSelectedDay;
           _addRangeToSelection();
         } else {
-          _rangeStart = selectedDay;
+          _rangeStart = normalizedSelectedDay;
           _rangeEnd = null;
         }
       } else {
         // Modo de selección individual
-        if (_selectedDates.contains(selectedDay)) {
-          _selectedDates.remove(selectedDay);
+        if (_selectedDates.contains(normalizedSelectedDay)) {
+          _selectedDates.remove(normalizedSelectedDay);
         } else {
-          _selectedDates.add(selectedDay);
+          _selectedDates.add(normalizedSelectedDay);
         }
       }
     });
+
+    // Debug: Verificar las fechas después de la selección
+    print('Fecha seleccionada normalizada: $normalizedSelectedDay');
+    print('¿Está en _selectedDates? ${_selectedDates.contains(normalizedSelectedDay)}');
+    print('_selectedDates actuales: $_selectedDates');
   }
 
   void _addRangeToSelection() {
     if (_rangeStart != null && _rangeEnd != null) {
       DateTime current = _rangeStart!;
       while (current.isBefore(_rangeEnd!) || current.isAtSameMomentAs(_rangeEnd!)) {
-        _selectedDates.add(current);
+        // Asegurar que las fechas del rango estén normalizadas
+        final DateTime normalizedCurrent = DateTime(current.year, current.month, current.day);
+        _selectedDates.add(normalizedCurrent);
         current = current.add(const Duration(days: 1));
       }
       _rangeStart = null;
@@ -522,7 +548,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   focusedDay: _focusedDay,
                   rangeStartDay: _rangeStart,
                   rangeEndDay: _rangeEnd,
-                  selectedDayPredicate: (day) => _selectedDates.contains(day),
+                  selectedDayPredicate: (day) {
+                    final normalizedDay = DateTime(day.year, day.month, day.day);
+                    final isSelected = _selectedDates.contains(normalizedDay);
+
+                    // Debug temporal - remover después de solucionar
+                    if (isSelected) {
+                      print('Día seleccionado en calendario: $normalizedDay');
+                    }
+
+                    return isSelected;
+                  },
                   rangeSelectionMode: _isRangeMode ? RangeSelectionMode.toggledOn : RangeSelectionMode.toggledOff,
                   onDaySelected: _onDaySelected,
                   onPageChanged: (focusedDay) {
@@ -608,7 +644,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ? 'Sin cambios para guardar'
                           : _selectedDates.isEmpty
                           ? 'Selecciona fechas para guardar'
-                          : 'Guardar cambios (${_selectedDates.length} fecha${_selectedDates.length == 1 ? '' : 's'})',
+                          : 'Guardar cambios',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
