@@ -5,12 +5,17 @@ import 'core/routes/app_routes.dart';
 import 'application/register_use_case.dart';
 import 'application/get_home_data_use_case.dart';
 import 'application/alter_favorite_use_case.dart';
+import 'application/get_travel_dates_use_case.dart';
+import 'application/save_travel_dates_use_case.dart';
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
+import 'data/repositories/travels_repository_impl.dart';
 import 'domain/repositories/user_repository.dart';
 import 'domain/repositories/home_repository.dart';
+import 'domain/repositories/travels_repository.dart';
 import 'data/api/user_api.dart';
 import 'data/api/home_api.dart';
+import 'data/api/travel_api.dart';
 
 final getIt = GetIt.instance;
 
@@ -18,6 +23,7 @@ void main() {
   // Data Layer - APIs
   getIt.registerLazySingleton<UserApi>(() => UserApi());
   getIt.registerLazySingleton<HomeApi>(() => HomeApi());
+  getIt.registerLazySingleton<TravelApi>(() => TravelApi());
 
   // Data Layer - Repositories
   getIt.registerLazySingleton<UserRepository>(() =>
@@ -25,6 +31,9 @@ void main() {
   );
   getIt.registerLazySingleton<HomeRepository>(() =>
       HomeRepositoryImpl(getIt<HomeApi>())
+  );
+  getIt.registerLazySingleton<TravelsRepository>(() =>
+      TravelsRepositoryImpl(getIt<TravelApi>())
   );
 
   // Domain Layer (use cases)
@@ -39,6 +48,12 @@ void main() {
   );
   getIt.registerLazySingleton<AlterFavoriteUseCase>(() =>
       AlterFavoriteUseCase(getIt<HomeRepository>())
+  );
+  getIt.registerLazySingleton<GetTravelDatesUseCase>(() =>
+      GetTravelDatesUseCase(getIt<TravelsRepository>())
+  );
+  getIt.registerLazySingleton<SaveTravelDatesUseCase>(() =>
+      SaveTravelDatesUseCase(getIt<TravelsRepository>())
   );
 
   runApp(const MyApp());

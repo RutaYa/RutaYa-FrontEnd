@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+// Importa tus use cases y GetIt
+import '../../../application/get_travel_dates_use_case.dart';
+import '../../../application/save_travel_dates_use_case.dart';
+import '../../../main.dart'; // Tu archivo de GetIt
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -11,18 +15,78 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  final Set<DateTime> _selectedDates = {};
+  // Separar fechas originales de fechas actuales
+  final Set<DateTime> _originalDates = {}; // Fechas cargadas del backend
+  final Set<DateTime> _selectedDates = {}; // Fechas actuales (incluye modificaciones)
+
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
   bool _isRangeMode = false;
-  bool _isChanged = false;
   bool _isLoading = false;
+  bool _isInitialLoading = true;
   DateTime _focusedDay = DateTime.now();
+  String? _errorMessage;
+
+  // Computed property para saber si hay cambios
+  bool get _hasChanges {
+    return !_selectedDates.difference(_originalDates).isEmpty ||
+        !_originalDates.difference(_selectedDates).isEmpty;
+  }
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('es_ES', null);
+    _loadTravelDates();
+  }
+
+  // Función para cargar las fechas desde el backend
+  Future<void> _loadTravelDates() async {
+    final getTravelDatesUseCase = getIt<GetTravelDatesUseCase>();
+
+    try {
+      setState(() {
+        _isInitialLoading = true;
+        _errorMessage = null;
+      });
+
+      final List<String> dateStrings = await getTravelDatesUseCase.getTravelDates();
+
+      if (dateStrings.isNotEmpty) {
+        // Convertir las fechas string a DateTime
+        final Set<DateTime> loadedDates = {};
+        for (String dateString in dateStrings) {
+          try {
+            final DateTime date = DateTime.parse(dateString);
+            loadedDates.add(DateTime(date.year, date.month, date.day));
+          } catch (e) {
+            print('Error parsing date: $dateString');
+          }
+        }
+
+        setState(() {
+          // Actualizar tanto las fechas originales como las seleccionadas
+          _originalDates.clear();
+          _originalDates.addAll(loadedDates);
+          _selectedDates.clear();
+          _selectedDates.addAll(loadedDates);
+          _isInitialLoading = false;
+        });
+      } else {
+        setState(() {
+          _originalDates.clear();
+          _selectedDates.clear();
+          _isInitialLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isInitialLoading = false;
+        _errorMessage = 'Error al cargar las fechas guardadas';
+      });
+      _showSnackBar('Error al cargar las fechas guardadas', isError: true);
+      print('Error loading travel dates: $e');
+    }
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
@@ -49,7 +113,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           _selectedDates.add(selectedDay);
         }
       }
-      _isChanged = true;
     });
   }
 
@@ -78,7 +141,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _selectedDates.clear();
       _rangeStart = null;
       _rangeEnd = null;
-      _isChanged = true;
+    });
+  }
+
+  // Función para resetear a las fechas originales
+  void _resetToOriginal() {
+    setState(() {
+      _selectedDates.clear();
+      _selectedDates.addAll(_originalDates);
+      _rangeStart = null;
+      _rangeEnd = null;
     });
   }
 
@@ -88,42 +160,42 @@ class _CalendarScreenState extends State<CalendarScreen> {
       return;
     }
 
+    final saveTravelDatesUseCase = getIt<SaveTravelDatesUseCase>();
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Simulación de llamada al backend (3 segundos)
-      await Future.delayed(const Duration(seconds: 3));
+      final List<String> dateStrings = _selectedDates
+          .map((date) => date.toIso8601String().split('T')[0])
+          .toList();
 
-      // Aquí harías la llamada real al backend
-      await _sendDatesToBackend();
+      dateStrings.sort();
+
+      final bool success = await saveTravelDatesUseCase.saveTravelDates(dateStrings);
 
       setState(() {
-        _isChanged = false;
         _isLoading = false;
       });
 
-      _showSnackBar('Fechas guardadas exitosamente', isError: false);
+      if (success) {
+        setState(() {
+          // Actualizar las fechas originales con las que se acabaron de guardar
+          _originalDates.clear();
+          _originalDates.addAll(_selectedDates);
+        });
+        _showSnackBar('Fechas guardadas exitosamente', isError: false);
+      } else {
+        _showSnackBar('Error al guardar las fechas', isError: true);
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
       _showSnackBar('Error al guardar las fechas', isError: true);
+      print('Error saving travel dates: $e');
     }
-  }
-
-  Future<void> _sendDatesToBackend() async {
-    // Aquí implementarías la llamada real al backend
-    final dates = _selectedDates.map((d) => d.toIso8601String()).toList();
-    print('Enviando fechas al backend: $dates');
-
-    // Ejemplo de implementación:
-    // final response = await http.post(
-    //   Uri.parse('${ApiConfig.baseUrl}/api/v1/travels-availability/add/'),
-    //   headers: {'Content-Type': 'application/json'},
-    //   body: jsonEncode({'dates': dates}),
-    // );
   }
 
   void _showSnackBar(String message, {required bool isError}) {
@@ -137,11 +209,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<bool> _showExitDialog() async {
-    if (!_isChanged) return true;
+    if (!_hasChanges) return true;
 
     return await showDialog<bool>(
       context: context,
-      barrierDismissible: true, // Permitir cerrar al tocar fuera
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -167,7 +239,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onPressed: () async {
               Navigator.of(context).pop(false);
               await _saveChanges();
-              if (!_isChanged && mounted) {
+              if (!_hasChanges && mounted) {
                 Navigator.of(context).pop();
               }
             },
@@ -180,7 +252,44 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
-    ) ?? false; // <- Si tocó fuera, retorna false (no salir)
+    ) ?? false;
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage ?? 'Error al cargar los datos',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _loadTravelDates,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE40101),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -218,7 +327,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           centerTitle: true,
           actions: [
-            if (_isChanged)
+            // Indicador de cambios
+            if (_hasChanges)
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 child: const Icon(
@@ -227,9 +337,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   size: 12,
                 ),
               ),
+            // Botón de recarga
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.black87),
+              onPressed: _isInitialLoading ? null : _loadTravelDates,
+              tooltip: 'Recargar fechas',
+            ),
           ],
         ),
-        body: _isLoading
+        body: _isInitialLoading
+            ? const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Color(0xFFE40101)),
+              SizedBox(height: 16),
+              Text(
+                'Cargando tus fechas...',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        )
+            : _errorMessage != null
+            ? _buildErrorWidget()
+            : _isLoading
             ? const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -245,7 +377,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         )
             : Column(
           children: [
-            // Descripción
+            // Descripción actualizada
             Container(
               width: double.infinity,
               margin: const EdgeInsets.all(16),
@@ -281,14 +413,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       height: 1.4,
                     ),
                   ),
-                  if (_selectedDates.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      '${_selectedDates.length} fecha${_selectedDates.length == 1 ? '' : 's'} seleccionada${_selectedDates.length == 1 ? '' : 's'}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFE40101),
+                  // Mostrar estado de cambios
+                  if (_hasChanges) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: const Text(
+                        'Tienes cambios sin guardar',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
@@ -296,7 +437,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
 
-            // Controles de selección
+            // Controles de selección actualizados
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -336,6 +477,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                     ),
                   ),
+                  // Botón para resetear a original (solo si hay cambios)
+                  if (_hasChanges) ...[
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _resetToOriginal,
+                      icon: const Icon(Icons.undo, size: 18),
+                      label: const Text('Resetear', style: TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.blue[600],
+                        side: BorderSide(color: Colors.blue[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -425,12 +583,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
 
-            // Botón de guardar
+            // Botón de guardar actualizado
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(
-                onPressed: _selectedDates.isEmpty ? null : _saveChanges,
+                onPressed: !_hasChanges || _selectedDates.isEmpty ? null : _saveChanges,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE40101),
                   foregroundColor: Colors.white,
@@ -446,9 +604,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   children: [
                     const SizedBox(width: 8),
                     Text(
-                      _selectedDates.isEmpty
+                      !_hasChanges
+                          ? 'Sin cambios para guardar'
+                          : _selectedDates.isEmpty
                           ? 'Selecciona fechas para guardar'
-                          : 'Guardar ${_selectedDates.length} fecha${_selectedDates.length == 1 ? '' : 's'}',
+                          : 'Guardar cambios (${_selectedDates.length} fecha${_selectedDates.length == 1 ? '' : 's'})',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

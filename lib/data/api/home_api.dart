@@ -11,8 +11,6 @@ class HomeApi {
   Future<HomeResponse?> getHomeData() async {
     final userId = await localStorageService.getCurrentUserId();
 
-    if (userId == null) return null;
-
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/home/$userId/'), // Corregido: usar interpolación en lugar de {userId}
