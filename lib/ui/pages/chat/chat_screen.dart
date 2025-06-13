@@ -35,10 +35,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _isLoading = true;
     });
 
-    final userPreferences = await localStorageService.getCurrentUserPreferences();
-    print("userPreferences?.gender");
-    print(userPreferences?.gender);
-
     try {
       // Intentar cargar mensajes existentes de la BD
       final existingMessages = await localStorageService.getAllMessages();
@@ -74,8 +70,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _generateAndStoreWelcomeMessage() async {
     try {
       final userPreferences = await localStorageService.getCurrentUserPreferences();
-      print("userPreferences?.gender");
-      print(userPreferences?.gender);
       final welcomeMessage = await _generateWelcomeMessage(userPreferences!);
 
       // Guardar el mensaje de bienvenida en la BD
@@ -91,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
       // Crear mensaje por defecto si falla todo
       final defaultMessage = Message(
         id: 1,
-        message : "¡Hola! Soy el asistente virtual de TuRuta. ¿En qué puedo ayudarte hoy?",
+        message : "¡Hola! Soy el asistente virtual de RutasYa. ¿En qué puedo ayudarte hoy?",
         isBot: true,
         timestamp: DateTime.now().toIso8601String(),
       );
@@ -109,7 +103,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<Message> _generateWelcomeMessage(UserPreferences userPreferences) async {
     String message;
 
-    message = "¡Hola! Soy el asistente virtual de TuRuta. ¿En qué puedo ayudarte hoy?";
+    message = "¡Hola! Soy el asistente virtual de RutasYa. ¿En qué puedo ayudarte hoy?";
 
     return Message(
       id: 1,

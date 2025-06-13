@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (loginResponse!=null) {
           // Simulamos una llamada a la API
           //await Future.delayed(const Duration(seconds: 2));
-
+          await localStorageService.clearAllTables();
           await localStorageService.saveUser(loginResponse.user);
 
           setState(() {
