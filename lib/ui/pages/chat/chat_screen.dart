@@ -15,7 +15,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final localStorageService = LocalStorageService();
@@ -24,9 +24,16 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isBotTyping = false;
   int _messageIdCounter = 1;
 
+  // Controlador de animación para los puntos
+  late AnimationController _typingAnimationController;
+
   @override
   void initState() {
     super.initState();
+    _typingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
     _loadMessages();
   }
 
@@ -55,8 +62,6 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         // Si no hay mensajes, generar mensaje de bienvenida
         await _generateAndStoreWelcomeMessage();
-
-
       }
 
       _scrollToBottom();
@@ -138,12 +143,21 @@ class _ChatScreenState extends State<ChatScreen> {
         _isBotTyping = true;
       });
 
+      // Iniciar animación de typing
+      _typingAnimationController.repeat();
+
+      // Scroll hacia abajo para mostrar el indicador de typing
+      _scrollToBottom();
+
       final sendMessageUseCase = getIt<SendMessageUseCase>();
       final messageResponse = await sendMessageUseCase.sendMessage(newMessage);
 
       setState(() {
         _isBotTyping = false;
       });
+
+      // Detener animación de typing
+      _typingAnimationController.stop();
 
       if (messageResponse != null) {
         _storeMessage(newMessage);
@@ -165,9 +179,9 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _isBotTyping = false;
       });
+      _typingAnimationController.stop();
       _showError('Error al guardar la mascota: ${e.toString()}');
     }
-
   }
 
   void _showError(String message) {
@@ -250,11 +264,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'RutasYa Asistente',
                   style: TextStyle(
                     color: Colors.black,
@@ -263,10 +277,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 Text(
-                  'En línea',
+                  _isBotTyping ? 'Escribiendo...' : 'En línea',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: _isBotTyping ? const Color(0xFF8158B7) : Colors.grey,
                     fontSize: 12,
+                    fontWeight: _isBotTyping ? FontWeight.w500 : FontWeight.normal,
                   ),
                 ),
               ],
@@ -281,10 +296,90 @@ class _ChatScreenState extends State<ChatScreen> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: messages.length,
+      itemCount: messages.length + (_isBotTyping ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == messages.length && _isBotTyping) {
+          return _buildTypingIndicator();
+        }
         final message = messages[index];
         return _buildMessageBubble(message);
+      },
+    );
+  }
+
+  Widget _buildTypingIndicator() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(right: 8, top: 4),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.smart_toy,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: _buildTypingAnimation(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypingAnimation() {
+    return AnimatedBuilder(
+      animation: _typingAnimationController,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final delay = index * 0.2;
+            final animationValue = (_typingAnimationController.value - delay).clamp(0.0, 1.0);
+            final opacity = (1.0 - (animationValue - 0.5).abs() * 2).clamp(0.3, 1.0);
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(opacity),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }),
+        );
       },
     );
   }
@@ -424,7 +519,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   color: Colors.white,
                   size: 20,
                 ),
-                onPressed: _sendMessage,
+                onPressed: _isBotTyping ? null : _sendMessage, // Deshabilitar botón mientras tipea
               ),
             ),
           ],
@@ -437,6 +532,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _typingAnimationController.dispose(); // Limpiar el controlador de animación
     super.dispose();
   }
 }

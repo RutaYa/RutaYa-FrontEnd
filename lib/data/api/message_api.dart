@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../domain/entities/message.dart';
+import '../../domain/entities/user_preferences.dart';
 import '../../data/repositories/local_storage_service.dart';
 import 'common/api_constants.dart';
 
@@ -10,19 +11,23 @@ class MessageApi {
 
   Future<Message?> sendMessage(Message message) async {
     // Obtener mensajes previos
+    final int userId = await localStorageService.getCurrentUserId();
+
+    // Obtener mensajes previos
     final List<Message> previousMessages = await localStorageService.getAllMessages();
-    // Obtener mascotas (memoryBank)
-    //final List<Pet> pets = await localStorageService.getAllPets();
+    // Obtener preferencias (memoryBank)
+    final UserPreferences? userPreferences = await localStorageService.getCurrentUserPreferences();
 
     // Construir body para el request
     final body = {
+      'userId': userId,
       'currentMessage': message.message,
       'previousMessages': previousMessages.map((msg) => {
         'message': msg.message,
         'isBot': msg.isBot,
         'timestamp': msg.timestamp,
       }).toList(),
-      'memoryBank': {}
+      'memoryBank': userPreferences?.toJson() ?? {}, // Manejar null case
     };
 
     final response = await http.post(
