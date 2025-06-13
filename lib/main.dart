@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:rutaya/data/repositories/message_repository_impl.dart';
+import 'package:rutaya/domain/repositories/message_repository.dart';
 import 'application/login_use_case.dart';
 import 'core/routes/app_routes.dart';
 import 'application/register_use_case.dart';
@@ -22,6 +24,7 @@ import 'data/api/user_api.dart';
 import 'data/api/home_api.dart';
 import 'data/api/travel_api.dart';
 import 'data/api/preference_api.dart';
+import 'data/api/message_api.dart';
 
 final getIt = GetIt.instance;
 
@@ -30,6 +33,8 @@ void main() {
   getIt.registerLazySingleton<UserApi>(() => UserApi());
   getIt.registerLazySingleton<HomeApi>(() => HomeApi());
   getIt.registerLazySingleton<TravelApi>(() => TravelApi());
+  getIt.registerLazySingleton<MessageApi>(() => MessageApi());
+  getIt.registerLazySingleton<PreferenceApi>(() => PreferenceApi());
 
   // Data Layer - Repositories
   getIt.registerLazySingleton<UserRepository>(() =>
@@ -40,6 +45,12 @@ void main() {
   );
   getIt.registerLazySingleton<TravelsRepository>(() =>
       TravelsRepositoryImpl(getIt<TravelApi>())
+  );
+  getIt.registerLazySingleton<MessageRepository>(() =>
+      MessageRepositoryImpl(getIt<MessageApi>())
+  );
+  getIt.registerLazySingleton<PreferencesRepository>(() =>
+      PreferencesRepositoryImpl(getIt<PreferenceApi>())
   );
 
   // Domain Layer (use cases)
@@ -60,6 +71,15 @@ void main() {
   );
   getIt.registerLazySingleton<SaveTravelDatesUseCase>(() =>
       SaveTravelDatesUseCase(getIt<TravelsRepository>())
+  );
+  getIt.registerLazySingleton<SendMessageUseCase>(() =>
+      SendMessageUseCase(getIt<MessageRepository>())
+  );
+  getIt.registerLazySingleton<GetUserPreferences>(() =>
+      GetUserPreferences(getIt<PreferencesRepository>())
+  );
+  getIt.registerLazySingleton<SaveUserPreferencesUseCase>(() =>
+      SaveUserPreferencesUseCase(getIt<PreferencesRepository>())
   );
 
   runApp(const MyApp());

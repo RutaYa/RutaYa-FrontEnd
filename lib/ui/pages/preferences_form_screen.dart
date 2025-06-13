@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:rutaya/domain/entities/user_preferences.dart';
 import '../../data/repositories/local_storage_service.dart';
 import '../../domain/entities/user.dart';
+import '../../application/save_user_preferences_use_case.dart';
+import '../../main.dart';
 
 class PreferencesFormScreen extends StatefulWidget {
   final bool isFirstTime;
@@ -49,6 +52,36 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
     setState(() {
       currentUser = user;
     });
+
+    if(!widget.isFirstTime){
+      await _loadUserPreferences();
+    }
+  }
+
+  Future _loadUserPreferences() async {
+    if (currentUser == null) return;
+
+    try {
+      // Primero intentar cargar desde la base de datos local
+      UserPreferences? preferences = await localStorageService.getCurrentUserPreferences();
+
+      if (preferences != null) {
+        setState(() {
+          _birthDate = preferences.birthDate;
+          _gender = preferences.gender;
+          _selectedInterests = List.from(preferences.travelInterests);
+          _environment = preferences.preferredEnvironment;
+          _travelStyle = preferences.travelStyle;
+          _budget = preferences.budgetRange;
+          _adrenalineLevel = preferences.adrenalineLevel;
+          _hiddenPlaces = preferences.wantsHiddenPlaces != null
+              ? (preferences.wantsHiddenPlaces! ? 'Sí' : 'No')
+              : null;
+        });
+      }
+    } catch (e) {
+      print('Error loading user preferences: $e');
+    }
   }
 
   @override
@@ -232,7 +265,7 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
           ),
           hint: const Text('Seleccionar género'),
           value: _gender,
-          items: ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir']
+          items: ['Masculino', 'Femenino', 'Otro']
               .map((gender) => DropdownMenuItem(
             value: gender,
             child: Text(gender),
@@ -456,22 +489,75 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
     );
   }
 
-  void _savePreferences() {
-    // Aquí implementarías la lógica para guardar las preferencias
-    // Por ejemplo, enviar a una API o guardar localmente
+  Future<void> _savePreferences() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Preferencias guardadas exitosamente'),
-        backgroundColor: Color(0xFFF6211F),
-      ),
-    );
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Usuario no encontrado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    // Si es primera vez, navegar a la pantalla principal
-    if (widget.isFirstTime) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      Navigator.pop(context);
+    try {
+
+      final savePreferencesUseCase = getIt<SaveUserPreferencesUseCase>();
+
+      // Crear la instancia de UserPreferences
+      UserPreferences userPreferences = UserPreferences(
+        userId: 0,
+        birthDate: _birthDate,
+        gender: _gender,
+        travelInterests: _selectedInterests,
+        preferredEnvironment: _environment,
+        travelStyle: _travelStyle,
+        budgetRange: _budget,
+        adrenalineLevel: _adrenalineLevel,
+        wantsHiddenPlaces: _hiddenPlaces != null
+            ? _hiddenPlaces == 'Sí'
+            : null,
+      );
+
+      // Guardar las preferencias
+      final preferencesResponse = await savePreferencesUseCase.saveUserPreferences(userPreferences);
+
+
+      if (preferencesResponse) {
+        // También guardar en la base de datos local
+        await localStorageService.saveUserPreferences(userPreferences);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Preferencias guardadas exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        if (widget.isFirstTime) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          Navigator.pop(context);
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al guardar las preferencias'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

@@ -35,6 +35,10 @@ class _ChatScreenState extends State<ChatScreen> {
       _isLoading = true;
     });
 
+    final userPreferences = await localStorageService.getCurrentUserPreferences();
+    print("userPreferences?.gender");
+    print(userPreferences?.gender);
+
     try {
       // Intentar cargar mensajes existentes de la BD
       final existingMessages = await localStorageService.getAllMessages();
@@ -70,6 +74,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _generateAndStoreWelcomeMessage() async {
     try {
       final userPreferences = await localStorageService.getCurrentUserPreferences();
+      print("userPreferences?.gender");
+      print(userPreferences?.gender);
       final welcomeMessage = await _generateWelcomeMessage(userPreferences!);
 
       // Guardar el mensaje de bienvenida en la BD

@@ -40,16 +40,13 @@ class PreferenceApi {
   }
 
   Future<bool> saveUserPreferences(UserPreferences preferences) async {
-    final int userId = await localStorageService.getCurrentUserId();
+    try {
+      final int userId = await localStorageService.getCurrentUserId();
+      final String fullUrl = '$baseUrl/preferences/';
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/preferences/'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
+      final requestBody = {
         'user_id': userId,
-        'birth_date': preferences.birthDate,
+        'birth_date': preferences.birthDate?.toIso8601String().split('T')[0],
         'gender': preferences.gender,
         'travel_interests': preferences.travelInterests,
         'preferred_environment': preferences.preferredEnvironment,
@@ -57,14 +54,33 @@ class PreferenceApi {
         'budget_range': preferences.budgetRange,
         'adrenaline_level': preferences.adrenalineLevel,
         'wants_hidden_places': preferences.wantsHiddenPlaces,
-      }),
-    );
+      };
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      print('Preferencias guardadas con éxito: ${response.body}');
-      return true;
-    } else {
-      print('Error al guardar preferencias: ${response.body}');
+      print("=== DEBUG INFO ===");
+      print("URL: $fullUrl");
+      print("User ID: $userId (${userId.runtimeType})");
+      print("Request Body: ${jsonEncode(requestBody)}");
+      print("==================");
+
+      final response = await http.post(
+        Uri.parse(fullUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      print("Status Code: ${response.statusCode}");
+      print("Response Headers: ${response.headers}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print('Exception en saveUserPreferences: $e');
       return false;
     }
   }

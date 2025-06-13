@@ -1,5 +1,5 @@
 class UserPreferences {
-  final String userId;
+  final int userId;
   final DateTime? birthDate;
   final String? gender;
   final List<String> travelInterests;
@@ -24,7 +24,7 @@ class UserPreferences {
   // Método para crear una instancia de UserPreferences desde un JSON
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     return UserPreferences(
-      userId: json['user_id'].toString(),
+      userId: json['user_id'] ?? 0,
       birthDate: json['birth_date'] != null
           ? DateTime.parse(json['birth_date'])
           : null,
@@ -43,7 +43,7 @@ class UserPreferences {
   // Método para crear una instancia desde la base de datos
   factory UserPreferences.fromDatabase(Map<String, dynamic> dbMap) {
     return UserPreferences(
-      userId: dbMap['user_id'] as String,
+      userId: int.parse(dbMap['user_id'].toString()),
       birthDate: dbMap['birth_date'] != null
           ? DateTime.parse(dbMap['birth_date'])
           : null,

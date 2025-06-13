@@ -24,7 +24,7 @@ class LocalStorageService {
 
   Future<Database> initDB() async {
     String path = await getDatabasesPath();
-    await deleteDatabase(join(path, 'rutaya.db'));
+    //await deleteDatabase(join(path, 'rutaya.db'));
     print("Database path: $path");
 
     return await openDatabase(
@@ -191,14 +191,22 @@ class LocalStorageService {
     );
   }
 
-  // Método para obtener las preferencias del usuario actual
+
   Future<UserPreferences?> getCurrentUserPreferences() async {
+    print('🔍 Iniciando lectura de preferencias desde la base de datos local...');
+
     final db = await database;
+
+    print('📥 Ejecutando query sobre tabla UserPreferences...');
     var results = await db.query('UserPreferences', limit: 1);
 
+    print('📊 Resultados obtenidos: ${results.length}');
     if (results.isNotEmpty) {
+      print('✅ Preferencias encontradas: ${results.first}');
       return UserPreferences.fromDatabase(results.first);
     }
+
+    print('⚠️ No se encontraron preferencias guardadas.');
     return null;
   }
 
