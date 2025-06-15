@@ -225,7 +225,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8158B7)),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDC1A1A)),
           ),
           SizedBox(height: 16),
           Text(
@@ -246,24 +246,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       elevation: 1,
       title: Row(
         children: [
-          const SizedBox(width: 5),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.smart_toy,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -280,7 +262,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 Text(
                   _isBotTyping ? 'Escribiendo...' : 'En línea',
                   style: TextStyle(
-                    color: _isBotTyping ? const Color(0xFF8158B7) : Colors.grey,
+                    color: _isBotTyping ? const Color(0xFFF52525) : Colors.grey,
                     fontSize: 12,
                     fontWeight: _isBotTyping ? FontWeight.w500 : FontWeight.normal,
                   ),
@@ -321,7 +303,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             margin: const EdgeInsets.only(right: 8, top: 4),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                colors: [Color(0xFFF52525), Color(0xFFF52525)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -338,7 +320,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                  colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -401,7 +383,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               margin: const EdgeInsets.only(right: 8, top: 4),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                  colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -420,7 +402,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 gradient: isBot
                     ? const LinearGradient(
-                  colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                  colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -508,7 +490,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             Container(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF8158B7), Color(0xFF35B4DD)],
+                  colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
