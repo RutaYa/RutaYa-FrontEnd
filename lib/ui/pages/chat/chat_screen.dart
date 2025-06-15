@@ -136,6 +136,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       timestamp: DateTime.now().toIso8601String(),
     );
 
+    _storeMessage(newMessage);
+    setState(() {
+      messages.add(newMessage);
+    });
+
     _messageController.clear();
 
     try {
@@ -160,10 +165,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _typingAnimationController.stop();
 
       if (messageResponse != null) {
-        _storeMessage(newMessage);
-        setState(() {
-          messages.add(newMessage);
-        });
 
         _storeMessage(messageResponse);
         setState(() {
