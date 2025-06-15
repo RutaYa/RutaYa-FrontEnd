@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/destination.dart';
 import '../../../application/alter_favorite_use_case.dart';
 import '../../../main.dart';
+import '../../../core/routes/app_routes.dart';
 
 class DestinationDetailScreen extends StatefulWidget {
   final Destination destination;
@@ -48,13 +49,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   }
 
   void _onConsultarPressed() {
-    // Aquí puedes implementar la lógica para abrir el chat
-    // Por ejemplo, navegar a una pantalla de chat
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Abriendo chat...'),
-        backgroundColor: Colors.red,
-      ),
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.main,
+          (route) => false,
+      arguments: {
+        'initialIndex': 1,
+        'destination': widget.destination, // 👈 Aquí pasas el objeto Pet completo
+      },
     );
   }
 

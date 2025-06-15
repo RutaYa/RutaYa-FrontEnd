@@ -3,7 +3,9 @@ import 'package:get_it/get_it.dart';
 import 'package:rutaya/data/repositories/message_repository_impl.dart';
 import 'package:rutaya/domain/repositories/message_repository.dart';
 import 'application/login_use_case.dart';
+import 'ui/pages/main/main_page.dart';
 import 'core/routes/app_routes.dart';
+import 'domain/entities/destination.dart';
 import 'application/register_use_case.dart';
 import 'application/get_home_data_use_case.dart';
 import 'application/alter_favorite_use_case.dart';
@@ -92,17 +94,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RutasYa!',
-      debugShowCheckedModeBanner: false, // Esto quita el banner de "Debug"
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFD0000),
-          primary: const Color(0xFFF6211F),
+        title: 'RutasYa!',
+        debugShowCheckedModeBanner: false, // Esto quita el banner de "Debug"
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFFD0000),
+            primary: const Color(0xFFF6211F),
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
-      ),
-      initialRoute: AppRoutes.loading,  // Cambiado a la ruta de bienvenida
-      routes: AppRoutes.routes,
+        initialRoute: AppRoutes.loading,  // Cambiado a la ruta de bienvenida
+        routes: AppRoutes.routes,
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.main) {
+            final args = settings.arguments as Map<String, dynamic>?;
+            final index = args?['initialIndex'] ?? 0;
+            final destination = args?['destination'] as Destination?;
+            return MaterialPageRoute(
+              builder: (_) => MainPage(initialIndex: index, destination: destination),
+            );
+          }
+          return null;
+        }
     );
   }
 }
