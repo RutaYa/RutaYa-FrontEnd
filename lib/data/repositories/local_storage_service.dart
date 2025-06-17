@@ -38,7 +38,8 @@ class LocalStorageService {
             id TEXT PRIMARY KEY, 
             first_name TEXT,
             last_name TEXT,
-            email TEXT
+            email TEXT,
+            phone TEXT
           )
         ''');
 
@@ -110,6 +111,7 @@ class LocalStorageService {
         'first_name': user.firstName,
         'last_name': user.lastName,
         'email': user.email,
+        'phone': user.phone,
       },
       conflictAlgorithm: ConflictAlgorithm.replace, // Reemplaza el registro si ya existe
     );
@@ -125,6 +127,7 @@ class LocalStorageService {
         firstName: results.first['first_name'] as String,
         lastName: results.first['last_name'] as String,
         email: results.first['email'] as String,
+        phone: results.first['phone'] as String,
       );
     }
     return null;

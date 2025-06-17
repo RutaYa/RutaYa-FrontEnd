@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 // Importa tus use cases y GetIt
+import '../../../core/routes/app_routes.dart';
 import '../../../application/get_travel_dates_use_case.dart';
 import '../../../application/save_travel_dates_use_case.dart';
 import '../../../main.dart'; // Tu archivo de GetIt
@@ -255,7 +256,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.main, // Reemplázalo por la ruta deseada
+                    (route) => false, // Elimina todas las rutas anteriores
+              );
+            },
             child: const Text(
               'Salir sin guardar',
               style: TextStyle(color: Colors.grey),
@@ -266,7 +273,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Navigator.of(context).pop(false);
               await _saveChanges();
               if (!_hasChanges && mounted) {
-                Navigator.of(context).pop();
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.main,
+                      (route) => false,
+                );
               }
             },
             style: ElevatedButton.styleFrom(
@@ -274,7 +285,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Guardar y salir'),
+            child: const Text('Guardar'),
           ),
         ],
       ),

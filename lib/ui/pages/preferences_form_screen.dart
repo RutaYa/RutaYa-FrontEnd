@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rutaya/domain/entities/user_preferences.dart';
+import '../../core/routes/app_routes.dart';
 import '../../data/repositories/local_storage_service.dart';
 import '../../domain/entities/user.dart';
 import '../../application/save_user_preferences_use_case.dart';
@@ -112,15 +113,17 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Saludo personalizado
-              Text(
-                'Hola ${currentUser?.firstName} cuéntanos más sobre ti:',
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFF6211F),
+              if (widget.isFirstTime)
+                Text(
+                  'Hola ${currentUser?.firstName.toLowerCase()}, cuéntanos más sobre ti:',
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFF6211F),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 15),
+              if (widget.isFirstTime)
+                const SizedBox(height: 15),
 
               // Preguntas generales
               _buildSectionTitle('Preguntas generales:'),
@@ -195,6 +198,7 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
               initialDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
               firstDate: DateTime(1920),
               lastDate: DateTime.now(),
+              locale: const Locale('es', 'ES'), // Forzar español específicamente
               builder: (context, child) {
                 return Theme(
                   data: Theme.of(context).copyWith(
@@ -263,6 +267,7 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
               borderSide: const BorderSide(color: Color(0xFFF6211F)),
             ),
           ),
+          dropdownColor: Colors.white,
           hint: const Text('Seleccionar género'),
           value: _gender,
           items: ['Masculino', 'Femenino', 'Otro']
@@ -311,6 +316,7 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
                   }
                 });
               },
+              backgroundColor: Colors.white, // Fondo blanco para chips no seleccionados
               selectedColor: const Color(0xFFF6211F).withOpacity(0.2),
               checkmarkColor: const Color(0xFFF6211F),
               labelStyle: TextStyle(
@@ -392,6 +398,7 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
               borderSide: const BorderSide(color: Color(0xFFF6211F)),
             ),
           ),
+          dropdownColor: Colors.white,
           hint: const Text('Seleccionar opción'),
           value: value,
           items: options
@@ -539,7 +546,11 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
         );
 
         if (widget.isFirstTime) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.main,
+                (route) => false,
+          );
         } else {
           Navigator.pop(context);
         }

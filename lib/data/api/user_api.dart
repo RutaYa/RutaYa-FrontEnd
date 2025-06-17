@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../domain/entities/login_response.dart';
+import '../../domain/entities/user.dart';
 import 'common/api_constants.dart';
+import '../../data/repositories/local_storage_service.dart';
 
 class UserApi {
+  final localStorageService = LocalStorageService();
   final String baseUrl = ApiConstants.baseUrl;
 
   Future<LoginResponse?> login(String email, String password) async {
@@ -37,6 +40,33 @@ class UserApi {
         'first_name': firstname,
         'last_name': lastname,
         'phone': phone,
+      },
+    );
+
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<bool> changePassword(String newPassword) async {
+    final int userId = await localStorageService.getCurrentUserId();
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/user/change-password/$userId'),
+      body: {
+        'new_password': newPassword,
+      },
+    );
+
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+
+  Future<bool> editProfile(User user) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/user/update/${user.id}'),
+      body: {
+        'first_name': user.firstName,
+        'last_name': user.lastName,
+        'phone': user.phone,
       },
     );
 

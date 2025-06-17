@@ -12,6 +12,8 @@ import 'application/alter_favorite_use_case.dart';
 import 'application/get_travel_dates_use_case.dart';
 import 'application/save_travel_dates_use_case.dart';
 import 'application/send_message_use_case.dart';
+import 'application/edit_profile_use_case.dart';
+import 'application/change_password_use_case.dart';
 import 'application/get_user_preferences.dart';
 import 'application/save_user_preferences_use_case.dart';
 import 'data/repositories/user_repository_impl.dart';
@@ -27,6 +29,7 @@ import 'data/api/home_api.dart';
 import 'data/api/travel_api.dart';
 import 'data/api/preference_api.dart';
 import 'data/api/message_api.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 final getIt = GetIt.instance;
 
@@ -83,6 +86,12 @@ void main() {
   getIt.registerLazySingleton<SaveUserPreferencesUseCase>(() =>
       SaveUserPreferencesUseCase(getIt<PreferencesRepository>())
   );
+  getIt.registerLazySingleton<EditProfileUseCase>(() =>
+      EditProfileUseCase(getIt<UserRepository>())
+  );
+  getIt.registerLazySingleton<ChangePasswordUseCase>(() =>
+      ChangePasswordUseCase(getIt<UserRepository>())
+  );
 
   runApp(const MyApp());
 }
@@ -101,8 +110,23 @@ class MyApp extends StatelessWidget {
             seedColor: const Color(0xFFFD0000),
             primary: const Color(0xFFF6211F),
           ),
+          scaffoldBackgroundColor: Colors.white,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            elevation: 0,
+          ),
           useMaterial3: true,
         ),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es', 'ES'), // Español
+          Locale('en', 'US'), // Inglés como respaldo
+        ],
+        locale: const Locale('es', 'ES'),
         initialRoute: AppRoutes.loading,  // Cambiado a la ruta de bienvenida
         routes: AppRoutes.routes,
         onGenerateRoute: (settings) {

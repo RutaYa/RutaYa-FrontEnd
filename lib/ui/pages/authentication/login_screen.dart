@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
           });
 
           if(loginResponse.preferences!=null){
-            // Registro exitoso → redirige a la siguiente pantalla
+            await localStorageService.saveUserPreferences(loginResponse.preferences!);
             Navigator.pushNamedAndRemoveUntil(
               context,
               AppRoutes.main,
