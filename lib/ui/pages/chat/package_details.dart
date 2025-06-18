@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/tour_package.dart';
 import '../../../application/save_tour_package_use_case.dart';
 import '../../../main.dart';
+import 'itinerary_details.dart';
 
 class PackageDetails extends StatefulWidget {
   final TourPackage package;
@@ -112,6 +113,16 @@ class _PackageDetailsState extends State<PackageDetails> {
       });
       _showErrorMessage('Error al guardar el paquete: ${e.toString()}');
     }
+  }
+
+  void _navigateToItinerary() {
+    // Navegar a la pantalla del itinerario
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ItineraryDetails(package: widget.package)
+      ),
+    );
   }
 
   @override
@@ -232,6 +243,38 @@ class _PackageDetailsState extends State<PackageDetails> {
                           '${widget.package.quantity} ${widget.package.quantity == 1 ? 'persona' : 'personas'}',
                         ),
                         const SizedBox(height: 24),
+                        // Botón Ver Itinerario - Posición estratégica después de la descripción
+                        Container(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            onPressed: _navigateToItinerary,
+                            icon: Icon(
+                              Icons.map_outlined,
+                              color: const Color(0xFFF52525),
+                              size: 20,
+                            ),
+                            label: const Text(
+                              'Ver Itinerario',
+                              style: TextStyle(
+                                color: Color(0xFFF52525),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Color(0xFFF52525),
+                                width: 1.5,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              backgroundColor: Colors.transparent,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                         // Precio destacado
                         Container(
                           width: double.infinity,
