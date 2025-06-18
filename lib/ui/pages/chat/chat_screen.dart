@@ -43,24 +43,47 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // Función para detectar y parsear JSON
   TourPackage? _extractTourPackageFromMessage(String message) {
     try {
-      // Buscar si el mensaje contiene "json"
-      if (!message.toLowerCase().contains('json')) {
+      print("Mensaje recibido: $message"); // Debug
+
+      // Buscar JSON en el mensaje
+      final jsonStart = message.indexOf('{');
+      final jsonEnd = message.lastIndexOf('}');
+
+      if (jsonStart == -1 || jsonEnd == -1 || jsonEnd <= jsonStart) {
+        print("No se encontró JSON válido en el mensaje"); // Debug
         return null;
       }
 
-      // Buscar el patrón JSON en el mensaje
-      final jsonRegex = RegExp(r'\{[^{}]*\}');
-      final match = jsonRegex.firstMatch(message);
+      final jsonString = message.substring(jsonStart, jsonEnd + 1);
+      print("JSON extraído: $jsonString"); // Debug
 
-      if (match != null) {
-        final jsonString = match.group(0);
-        final jsonData = json.decode(jsonString!);
-        return TourPackage.fromJson(jsonData);
+      final Map<String, dynamic> json = jsonDecode(jsonString);
+      print("JSON decodificado: $json"); // Debug
+
+      // Verificar si tiene la estructura correcta
+      if (!json.containsKey('title') ||
+          !json.containsKey('description') ||
+          !json.containsKey('start_date') ||
+          !json.containsKey('price')) {
+        print("JSON no tiene la estructura esperada"); // Debug
+        return null;
       }
+
+      // Agregar campos faltantes para el constructor
+      json['user_id'] = json['user_id'] ?? 0; // ID por defecto
+      json['is_paid'] = json['is_paid'] ?? false; // No pagado por defecto
+
+      // Crear el tour package usando el factory constructor
+      final tourPackage = TourPackage.fromJson(json);
+
+      print("TourPackage creado: ${tourPackage.title}"); // Debug
+      return tourPackage;
+
     } catch (e) {
-      print('Error al parsear JSON: $e');
+      print("Error al extraer tour package: $e"); // Debug
+      print("Stack trace: ${e.toString()}"); // Debug adicional
+      return null;
     }
-    return null;
   }
 
   Future<void> _loadMessages() async {
@@ -314,9 +337,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
         // Verificar si es un mensaje del bot con JSON
         if (message.isBot) {
+          print("Procesando mensaje del bot:..."); // Debug
+
           final tourPackage = _extractTourPackageFromMessage(message.message);
           if (tourPackage != null) {
+            print("Mostrando tour package card para: ${tourPackage.title}"); // Debug
             return _buildTourPackageCard(tourPackage);
+          } else {
+            print("No se pudo extraer tour package, mostrando mensaje normal"); // Debug
           }
         }
 
@@ -326,12 +354,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildTourPackageCard(TourPackage package) {
+    print("Construyendo tour package card: ${package.title}"); // Debug
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Icono circular
           Container(
             width: 32,
             height: 32,
@@ -353,13 +384,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               size: 16,
             ),
           ),
+          // Contenido principal
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey[50], // Fondo muy sutil gris claro
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.grey[200]!, // Borde sutil
+                  color: Colors.grey[200]!,
                   width: 1,
                 ),
               ),
@@ -371,7 +403,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF52525), // Header ligeramente más oscuro
+                      color: Color(0xFFF52525),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(16),
@@ -388,7 +420,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                   // Contenido principal
                   Container(
-                    color: Colors.grey[100], // Fondo gris claro
+                    color: Colors.grey[100],
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,7 +446,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Barra de progreso decorativa más sutil
+                        // Barra de progreso decorativa
                         Container(
                           height: 3,
                           decoration: BoxDecoration(
@@ -470,7 +502,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '${package.price.toStringAsFixed(2)} PEN',
+                              'S/ ${package.price.toStringAsFixed(2)}',
                               style: TextStyle(
                                 color: Colors.grey[800],
                                 fontSize: 18,
@@ -482,13 +514,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => PackageDetails(package: package)
+                                      builder: (context) => PackageDetails(package: package)
                                   ),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF52525),
-                                elevation: 0, // Sombra sutil
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -511,7 +543,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         const SizedBox(height: 16),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -523,35 +555,58 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   String _formatDate(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
+      print("Formateando fecha: $dateString"); // Debug
+
+      // Intentar diferentes formatos de fecha
+      DateTime date;
+      if (dateString.contains('T')) {
+        date = DateTime.parse(dateString);
+      } else {
+        // Formato YYYY-MM-DD
+        date = DateTime.parse(dateString + 'T00:00:00');
+      }
+
       final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
       final months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-      return '${days[date.weekday % 7]}, ${date.day} de ${months[date.month - 1]} de ${date.year}';
+      final result = '${days[date.weekday % 7]}, ${date.day} de ${months[date.month - 1]} de ${date.year}';
+      print("Fecha formateada: $result"); // Debug
+      return result;
     } catch (e) {
+      print("Error al formatear fecha: $e"); // Debug
       return dateString;
     }
   }
 
   String _formatDateTime(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
+      print("Formateando fecha y hora: $dateString"); // Debug
+
+      DateTime date;
+      if (dateString.contains('T')) {
+        date = DateTime.parse(dateString);
+      } else {
+        date = DateTime.parse(dateString + 'T08:00:00'); // Hora por defecto
+      }
+
       final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
       final months = [
         'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
       ];
 
-      // Formatear hora en 12h con sufijo a. m. / p. m.
       final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
       final minute = date.minute.toString().padLeft(2, '0');
       final period = date.hour < 12 ? 'a. m.' : 'p. m.';
 
       final formattedTime = '$hour:$minute $period';
+      final result = '${date.day} de ${months[date.month - 1]} de ${date.year} • $formattedTime';
 
-      return '${days[date.weekday % 7]}, ${date.day} de ${months[date.month - 1]} de ${date.year} • $formattedTime';
+      print("Fecha y hora formateada: $result"); // Debug
+      return result;
     } catch (e) {
+      print("Error al formatear fecha y hora: $e"); // Debug
       return dateString;
     }
   }
