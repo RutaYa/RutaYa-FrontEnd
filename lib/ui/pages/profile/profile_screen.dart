@@ -122,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildMenuItem(
               icon: Icons.account_balance_wallet_outlined,
               title: 'Moneda',
-              subtitle: 'USD (\$)',
+              subtitle: 'PEN (S/.)',
               onTap: () {
                 // Navegar a configuración de moneda
               },

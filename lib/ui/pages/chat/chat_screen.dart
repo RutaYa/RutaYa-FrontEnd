@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:rutaya/domain/entities/user_preferences.dart';
+import 'package:rutaya/ui/pages/chat/package_details.dart';
 import '../../../data/repositories/local_storage_service.dart';
 import '../../../domain/entities/message.dart';
 import '../../../domain/entities/destination.dart';
+import '../../../domain/entities/tour_package.dart';
 import '../../../main.dart';
 import '../../../application/send_message_use_case.dart';
 
@@ -35,6 +38,29 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       vsync: this,
     );
     _loadMessages();
+  }
+
+  // Función para detectar y parsear JSON
+  TourPackage? _extractTourPackageFromMessage(String message) {
+    try {
+      // Buscar si el mensaje contiene "json"
+      if (!message.toLowerCase().contains('json')) {
+        return null;
+      }
+
+      // Buscar el patrón JSON en el mensaje
+      final jsonRegex = RegExp(r'\{[^{}]*\}');
+      final match = jsonRegex.firstMatch(message);
+
+      if (match != null) {
+        final jsonString = match.group(0);
+        final jsonData = json.decode(jsonString!);
+        return TourPackage.fromJson(jsonData);
+      }
+    } catch (e) {
+      print('Error al parsear JSON: $e');
+    }
+    return null;
   }
 
   Future<void> _loadMessages() async {
@@ -285,10 +311,251 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           return _buildTypingIndicator();
         }
         final message = messages[index];
+
+        // Verificar si es un mensaje del bot con JSON
+        if (message.isBot) {
+          final tourPackage = _extractTourPackageFromMessage(message.message);
+          if (tourPackage != null) {
+            return _buildTourPackageCard(tourPackage);
+          }
+        }
+
         return _buildMessageBubble(message);
       },
     );
   }
+
+  Widget _buildTourPackageCard(TourPackage package) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(right: 12, top: 4),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFF52525),
+                  const Color(0xFFF52525),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.smart_toy,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50], // Fondo muy sutil gris claro
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.grey[200]!, // Borde sutil
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header con fecha
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF52525), // Header ligeramente más oscuro
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      _formatDate(package.startDate),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  // Contenido principal
+                  Container(
+                    color: Colors.grey[100], // Fondo gris claro
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        // Título
+                        Text(
+                          package.title,
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Descripción
+                        Text(
+                          package.description,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Barra de progreso decorativa más sutil
+                        Container(
+                          height: 3,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(2),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Información del viaje
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              color: Colors.grey[500],
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDateTime(package.startDate),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.people,
+                              color: Colors.grey[500],
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${package.quantity} ${package.quantity == 1 ? 'Adulto' : 'Adultos'}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Precio y botón
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${package.price.toStringAsFixed(2)} PEN',
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PackageDetails(package: package)
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFF52525),
+                                elevation: 0, // Sombra sutil
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                              ),
+                              child: const Text(
+                                'Ver Detalles',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      final months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+      return '${days[date.weekday % 7]}, ${date.day} de ${months[date.month - 1]} de ${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  String _formatDateTime(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      final months = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      ];
+
+      // Formatear hora en 12h con sufijo a. m. / p. m.
+      final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+      final minute = date.minute.toString().padLeft(2, '0');
+      final period = date.hour < 12 ? 'a. m.' : 'p. m.';
+
+      final formattedTime = '$hour:$minute $period';
+
+      return '${days[date.weekday % 7]}, ${date.day} de ${months[date.month - 1]} de ${date.year} • $formattedTime';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
 
   Widget _buildTypingIndicator() {
     return Container(
@@ -301,8 +568,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             width: 32,
             height: 32,
             margin: const EdgeInsets.only(right: 8, top: 4),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 colors: [Color(0xFFF52525), Color(0xFFF52525)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -318,13 +585,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                   bottomLeft: Radius.circular(4),
@@ -381,8 +648,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               width: 32,
               height: 32,
               margin: const EdgeInsets.only(right: 8, top: 4),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -488,8 +755,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(width: 8),
             Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [Color(0xFFF52525), Color(0xFFF52525)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
