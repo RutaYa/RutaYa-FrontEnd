@@ -15,18 +15,28 @@ class ItineraryDetails extends StatefulWidget {
 }
 
 class _ItineraryDetailsState extends State<ItineraryDetails> {
+
   // Función para formatear fecha y hora
   String _formatDateTime(String dateString) {
+    print(dateString);
     try {
       final date = DateTime.parse(dateString);
+
+      final days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      final dayName = days[date.weekday % 7];
+      final capitalizedDay = '${dayName[0].toUpperCase()}${dayName.substring(1)}';
+
       final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
       final minute = date.minute.toString().padLeft(2, '0');
       final period = date.hour < 12 ? 'a. m.' : 'p. m.';
-      return '$hour:$minute $period';
+      final formattedTime = '$hour:$minute $period';
+
+      return '$capitalizedDay ${date.day} - $formattedTime';
     } catch (e) {
       return dateString;
     }
   }
+
 
   // Función para obtener icono según el tipo de actividad
   IconData _getActivityIcon(String description) {

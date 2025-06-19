@@ -1,34 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:rutaya/application/save_tour_package_use_case.dart';
 import 'package:rutaya/data/repositories/message_repository_impl.dart';
 import 'package:rutaya/domain/repositories/message_repository.dart';
 import 'application/login_use_case.dart';
 import 'ui/pages/main/main_page.dart';
 import 'core/routes/app_routes.dart';
 import 'domain/entities/destination.dart';
+//use cases
+import 'application/save_travel_dates_use_case.dart';
 import 'application/register_use_case.dart';
 import 'application/get_home_data_use_case.dart';
 import 'application/alter_favorite_use_case.dart';
 import 'application/get_travel_dates_use_case.dart';
 import 'application/save_travel_dates_use_case.dart';
+import 'application/pay_tour_package_use_case.dart';
+import 'application/delete_tour_package_use_case.dart';
 import 'application/send_message_use_case.dart';
 import 'application/edit_profile_use_case.dart';
 import 'application/change_password_use_case.dart';
 import 'application/get_user_preferences.dart';
 import 'application/save_user_preferences_use_case.dart';
+//repository impl
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
 import 'data/repositories/travels_repository_impl.dart';
 import 'data/repositories/preferences_repository_impl.dart';
+import 'data/repositories/tour_repository_impl.dart';
+//repository
 import 'domain/repositories/user_repository.dart';
 import 'domain/repositories/home_repository.dart';
 import 'domain/repositories/travels_repository.dart';
 import 'domain/repositories/preferences_repository.dart';
+import 'domain/repositories/tour_repository.dart';
+//api
 import 'data/api/user_api.dart';
 import 'data/api/home_api.dart';
 import 'data/api/travel_api.dart';
 import 'data/api/preference_api.dart';
 import 'data/api/message_api.dart';
+import 'data/api/tour_api.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 final getIt = GetIt.instance;
@@ -40,6 +51,7 @@ void main() {
   getIt.registerLazySingleton<TravelApi>(() => TravelApi());
   getIt.registerLazySingleton<MessageApi>(() => MessageApi());
   getIt.registerLazySingleton<PreferenceApi>(() => PreferenceApi());
+  getIt.registerLazySingleton<TourApi>(() => TourApi());
 
   // Data Layer - Repositories
   getIt.registerLazySingleton<UserRepository>(() =>
@@ -56,6 +68,9 @@ void main() {
   );
   getIt.registerLazySingleton<PreferencesRepository>(() =>
       PreferencesRepositoryImpl(getIt<PreferenceApi>())
+  );
+  getIt.registerLazySingleton<TourRepository>(() =>
+      TourRepositoryImpl(getIt<TourApi>())
   );
 
   // Domain Layer (use cases)
@@ -91,6 +106,15 @@ void main() {
   );
   getIt.registerLazySingleton<ChangePasswordUseCase>(() =>
       ChangePasswordUseCase(getIt<UserRepository>())
+  );
+  getIt.registerLazySingleton<SaveTourPackageUseCase>(() =>
+      SaveTourPackageUseCase(getIt<TourRepository>())
+  );
+  getIt.registerLazySingleton<PayTourPackageUseCase>(() =>
+      PayTourPackageUseCase(getIt<TourRepository>())
+  );
+  getIt.registerLazySingleton<DeleteTourPackageUseCase>(() =>
+      DeleteTourPackageUseCase(getIt<TourRepository>())
   );
 
   runApp(const MyApp());

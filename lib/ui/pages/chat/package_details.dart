@@ -3,6 +3,7 @@ import '../../../domain/entities/tour_package.dart';
 import '../../../application/save_tour_package_use_case.dart';
 import '../../../main.dart';
 import 'itinerary_details.dart';
+import 'pay_package_screen.dart';
 
 class PackageDetails extends StatefulWidget {
   final TourPackage package;
@@ -320,8 +321,12 @@ class _PackageDetailsState extends State<PackageDetails> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navegación a pantalla de pago
-                      print('Navegar a pantalla de pago');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PayPackageScreen(package: widget.package)
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF52525),

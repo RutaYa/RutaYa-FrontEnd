@@ -50,6 +50,8 @@ class MessageApi {
         timestamp: DateTime.now().toIso8601String(),
       );
 
+      print(botMessage);
+
       return responseMessage;
     } else {
       print('Error al enviar el mensaje: ${response.body}');

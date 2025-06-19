@@ -12,11 +12,6 @@ class TourApi {
     try {
       final userId = await localStorageService.getCurrentUserId();
 
-      if (userId == null) {
-        print('Error: No se encontró el userId');
-        return false;
-      }
-
       final response = await http.post(
         Uri.parse('$baseUrl/tour/add/'),
         headers: {
