@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../domain/entities/tour_package.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../main.dart';
+import '../../../application/save_tour_package_use_case.dart';
+import '../../../application/pay_tour_package_use_case.dart';
 
 enum PaymentMethod { none, card, yape }
 enum PaymentStep { selection, form, processing }
 
 class PayPackageScreen extends StatefulWidget {
   final TourPackage package;
+  final bool isFromChat;
 
   const PayPackageScreen({
     super.key,
     required this.package,
+    required this.isFromChat
   });
 
   @override
@@ -707,24 +712,43 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
     );
   }
 
-  void _processPayment() {
+  void _processPayment() async {
     setState(() {
       _currentStep = PaymentStep.processing;
     });
 
-    // Simular procesamiento de pago
-    Future.delayed(const Duration(seconds: 3), () {
-      // Aquí iría la lógica real de pago
-      _showPaymentResult(true); // true = éxito, false = error
-    });
+    try {
+      bool success = false;
+
+      if (widget.isFromChat) {
+        print("ESTOY CREANDO UN PACKAGE PAGADO");
+
+        final updatedPackage = widget.package.copyWith(isPaid: true);
+
+        print(updatedPackage);
+
+        final saveTourPackageUseCase = getIt<SaveTourPackageUseCase>();
+        success = await saveTourPackageUseCase.saveTourPackage(updatedPackage);
+      } else {
+        print("ESTOY PAGANDO UN PACKAGE PENDIENTE");
+        final payTourPackageUseCase = getIt<PayTourPackageUseCase>();
+        success = await payTourPackageUseCase.payTourPackage(widget.package.id);
+      }
+
+      _showPaymentResult(success);
+    } catch (e) {
+      print('❌ Error en el proceso de pago: $e');
+      _showPaymentResult(false);
+    }
   }
+
 
   void _showPaymentResult(bool success) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white, // Fondo blanco
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Icon(
           success ? Icons.check_circle : Icons.error,
@@ -753,13 +777,17 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
         ),
         actions: success
             ? [
+          // Botón: Ver mis reservas → index 2
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Cerrar diálogo
+              Navigator.of(context).pop();
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 AppRoutes.main,
-                    (route) => false, // Esto elimina todas las rutas anteriores
+                    (route) => false,
+                arguments: {
+                  'initialIndex': 2,
+                },
               );
             },
             child: const Text(
@@ -767,23 +795,25 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
               style: TextStyle(color: Color(0xFFF52525)),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Cerrar diálogo
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.main,
-                    (route) => false,
-                arguments: {
-                  'initialIndex': 1
-                },
-              );
-            },
-            child: const Text(
-              'Volver al chat',
-              style: TextStyle(color: Color(0xFFF52525)),
+          // Botón: Volver al chat → index 1 (solo si viene del chat)
+          if (widget.isFromChat)
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.main,
+                      (route) => false,
+                  arguments: {
+                    'initialIndex': 1,
+                  },
+                );
+              },
+              child: const Text(
+                'Volver al chat',
+                style: TextStyle(color: Color(0xFFF52525)),
+              ),
             ),
-          ),
         ]
             : [
           TextButton(
@@ -802,6 +832,7 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
       ),
     );
   }
+
 
 }
 

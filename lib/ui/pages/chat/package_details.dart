@@ -12,7 +12,7 @@ class PackageDetails extends StatefulWidget {
   const PackageDetails({
     super.key,
     required this.package,
-    required this.isFromChat,
+    required this.isFromChat
   });
 
   @override
@@ -328,7 +328,7 @@ class _PackageDetailsState extends State<PackageDetails> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PayPackageScreen(package: widget.package),
+                          builder: (context) => PayPackageScreen(package: widget.package, isFromChat: widget.isFromChat),
                         ),
                       );
                     },

@@ -12,6 +12,8 @@ class TourApi {
     try {
       final userId = await localStorageService.getCurrentUserId();
 
+      print("LA PROPIEDA PAID: ${tourPackage.isPaid}");
+
       final response = await http.post(
         Uri.parse('$baseUrl/tour/add/'),
         headers: {
@@ -25,6 +27,7 @@ class TourApi {
           'days': tourPackage.days,
           'quantity': tourPackage.quantity,
           'price': tourPackage.price,
+          'is_paid': tourPackage.isPaid,
           'itinerary': tourPackage.itinerary.map((item) => item.toJson()).toList(),
         }),
       );

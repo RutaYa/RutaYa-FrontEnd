@@ -1,6 +1,7 @@
 import 'itinerary_item.dart';
 
 class TourPackage {
+  final int id;
   final int userId;
   final String title;
   final String description;
@@ -12,6 +13,7 @@ class TourPackage {
   final List<ItineraryItem> itinerary;
 
   TourPackage({
+    required this.id,
     required this.userId,
     required this.title,
     required this.description,
@@ -23,6 +25,32 @@ class TourPackage {
     required this.itinerary,
   });
 
+  TourPackage copyWith({
+    int? id,
+    int? userId,
+    String? title,
+    String? description,
+    String? startDate,
+    int? days,
+    int? quantity,
+    double? price,
+    bool? isPaid,
+    List<ItineraryItem>? itinerary,
+  }) {
+    return TourPackage(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      startDate: startDate ?? this.startDate,
+      days: days ?? this.days,
+      quantity: quantity ?? this.quantity,
+      price: price ?? this.price,
+      isPaid: isPaid ?? this.isPaid,
+      itinerary: itinerary ?? this.itinerary,
+    );
+  }
+
   factory TourPackage.fromJson(Map<String, dynamic> json) {
     List<ItineraryItem> itineraryList = [];
 
@@ -33,6 +61,7 @@ class TourPackage {
     }
 
     return TourPackage(
+      id: json['id'] ?? 0,
       userId: json['user_id'] ?? 0,
       title: json['title'] ?? '',
       description: json['description'] ?? '',
