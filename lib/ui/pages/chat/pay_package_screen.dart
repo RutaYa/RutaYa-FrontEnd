@@ -32,6 +32,7 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
   final TextEditingController _expiryDateController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _cardHolderController = TextEditingController();
+  List<TextEditingController> _codeControllers = List.generate(6, (index) => TextEditingController());
 
   // Controlador para Yape
   final TextEditingController _phoneController = TextEditingController();
@@ -45,8 +46,12 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
     _cvvController.dispose();
     _cardHolderController.dispose();
     _phoneController.dispose();
+    for (var controller in _codeControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +94,20 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
         return _selectedMethod == PaymentMethod.card ? 'Datos de Tarjeta' : 'Pago con Yape';
       case PaymentStep.processing:
         return 'Procesando...';
+    }
+  }
+
+  void _clearForms() {
+    // Limpiar formulario de tarjeta
+    _cardNumberController.clear();
+    _expiryDateController.clear();
+    _cvvController.clear();
+    _cardHolderController.clear();
+
+    // Limpiar formulario de Yape
+    _phoneController.clear();
+    for (var controller in _codeControllers) {
+      controller.clear();
     }
   }
 
@@ -217,6 +236,8 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
             child: ElevatedButton(
               onPressed: _selectedMethod != PaymentMethod.none
                   ? () {
+                // Limpiar formularios antes de continuar
+                _clearForms();
                 setState(() {
                   _currentStep = PaymentStep.form;
                 });
@@ -451,94 +472,131 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Resumen del paquete
-          _buildPackageSummary(),
-          const SizedBox(height: 24),
-
+          // Título
           const Text(
-            'Pago con Yape',
+            'Ingresa tu celular Yape',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // Instrucciones
+          // Campo de número de celular
           Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: Colors.grey[300]!),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Instrucciones:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text('1. Abre tu app Yape'),
-                const Text('2. Selecciona "Yapear"'),
-                const Text('3. Ingresa el número: 987 654 321'),
-                const Text('4. Monto: S/ '),
-                Text('5. Concepto: Pago ${widget.package.title}'),
-                const SizedBox(height: 12),
-                const Text(
-                  'Luego ingresa tu número de celular para confirmar:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
+            child: TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(9),
               ],
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 16),
+                hintText: '987 654 321',
+                hintStyle: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 18,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  // Esto actualizará el estado del botón cuando cambie el teléfono
+                });
+              },
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
 
-          // Campo de teléfono
-          TextFormField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(9),
-            ],
-            decoration: InputDecoration(
-              labelText: 'Tu número de celular',
-              hintText: '987654321',
-              prefixText: '+51 ',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFF52525), width: 2),
-              ),
+          // Título código de aprobación
+          const Text(
+            'Código de aprobación',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
+          const SizedBox(height: 16),
 
-          const Spacer(),
+          // Campos de código de aprobación (6 dígitos)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(6, (index) {
+              return Container(
+                width: 45,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: TextFormField(
+                  controller: _codeControllers[index],
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(1),
+                  ],
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    counterText: '',
+                  ),
+                  onChanged: (value) {
+                    if (value.isNotEmpty && index < 5) {
+                      FocusScope.of(context).nextFocus();
+                    } else if (value.isEmpty && index > 0) {
+                      FocusScope.of(context).previousFocus();
+                    }
+                    // Actualizar el estado del botón cuando cambie cualquier dígito
+                    setState(() {});
+                  },
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 32),
 
-          // Botón confirmar
+          // Texto "Encuéntralo en el menú de Yape"
+          const Text(
+            'Encuéntralo en el menú de Yape',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 40),
+
+          // Botón Yapear
           SizedBox(
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: _phoneController.text.length == 9
-                  ? () {
+              onPressed: _isFormValid() ? () {
                 _processPayment();
-              }
-                  : null,
+              } : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _phoneController.text.length == 9
-                    ? const Color(0xFFF52525)
+                backgroundColor: _isFormValid()
+                    ? const Color(0xFF722F8B) // Color morado de Yape
                     : Colors.grey[300],
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -546,9 +604,9 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
                 ),
               ),
               child: Text(
-                'Confirmar Pago',
+                'Yapear S/ ${widget.package.price.toStringAsFixed(2)}',
                 style: TextStyle(
-                  color: _phoneController.text.length == 9
+                  color: _isFormValid()
                       ? Colors.white
                       : Colors.grey[600],
                   fontSize: 16,
@@ -558,9 +616,35 @@ class _PayPackageScreenState extends State<PayPackageScreen> {
             ),
           ),
           const SizedBox(height: 24),
+
+          // Logo de Yape
+          Image.asset(
+            'assets/images/yape.png',
+            height: 50,
+            errorBuilder: (context, error, stackTrace) =>
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00D4AA),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('YAPE', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                ),
+          ),
         ],
       ),
     );
+  }
+
+  // Método para validar el formulario
+  bool _isFormValid() {
+    if (_phoneController.text.length != 9) return false;
+
+    for (var controller in _codeControllers) {
+      if (controller.text.isEmpty) return false;
+    }
+
+    return true;
   }
 
   Widget _buildPackageSummary() {
