@@ -39,10 +39,29 @@ class TourPackage {
       startDate: json['start_date'] ?? '',
       days: json['days'] ?? 0,
       quantity: json['quantity'] ?? 0,
-      price: (json['price'] ?? 0).toDouble(),
+      price: _parsePrice(json['price']),
       isPaid: json['is_paid'] ?? false,
       itinerary: itineraryList,
     );
+  }
+
+  static double _parsePrice(dynamic price) {
+    if (price == null) return 0.0;
+
+    if (price is double) {
+      return price;
+    } else if (price is int) {
+      return price.toDouble();
+    } else if (price is String) {
+      try {
+        return double.parse(price);
+      } catch (e) {
+        print('Error parseando precio: $price -> $e');
+        return 0.0;
+      }
+    }
+
+    return 0.0;
   }
 
   Map<String, dynamic> toJson() {

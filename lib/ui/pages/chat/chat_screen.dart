@@ -73,6 +73,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       json['user_id'] = json['user_id'] ?? 0; // ID por defecto
       json['is_paid'] = json['is_paid'] ?? false; // No pagado por defecto
 
+      print("PROCESADOOOOOOOOOOOOO Y SALE: ");
+      print(json);
+
       // Crear el tour package usando el factory constructor
       final tourPackage = TourPackage.fromJson(json);
 
@@ -215,6 +218,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       if (messageResponse != null) {
 
+        print(messageResponse);
         _storeMessage(messageResponse);
         setState(() {
           messages.add(messageResponse);

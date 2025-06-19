@@ -13,7 +13,6 @@ import 'application/register_use_case.dart';
 import 'application/get_home_data_use_case.dart';
 import 'application/alter_favorite_use_case.dart';
 import 'application/get_travel_dates_use_case.dart';
-import 'application/save_travel_dates_use_case.dart';
 import 'application/pay_tour_package_use_case.dart';
 import 'application/delete_tour_package_use_case.dart';
 import 'application/send_message_use_case.dart';
@@ -21,6 +20,7 @@ import 'application/edit_profile_use_case.dart';
 import 'application/change_password_use_case.dart';
 import 'application/get_user_preferences.dart';
 import 'application/save_user_preferences_use_case.dart';
+import 'application/get_tour_packages_use_case.dart';
 //repository impl
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
@@ -115,6 +115,9 @@ void main() {
   );
   getIt.registerLazySingleton<DeleteTourPackageUseCase>(() =>
       DeleteTourPackageUseCase(getIt<TourRepository>())
+  );
+  getIt.registerLazySingleton<GetTourPackagesUseCase>(() =>
+      GetTourPackagesUseCase(getIt<TourRepository>())
   );
 
   runApp(const MyApp());

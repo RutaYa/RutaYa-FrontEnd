@@ -46,11 +46,6 @@ class TourApi {
     try {
       final userId = await localStorageService.getCurrentUserId();
 
-      if (userId == null) {
-        print('Error: No se encontró el userId');
-        return [];
-      }
-
       final response = await http.get(
         Uri.parse('$baseUrl/tour/user/$userId/'),
         headers: {
@@ -75,11 +70,6 @@ class TourApi {
   Future<bool> payTourPackage(int tourId) async {
     try {
       final userId = await localStorageService.getCurrentUserId();
-
-      if (userId == null) {
-        print('Error: No se encontró el userId');
-        return false;
-      }
 
       final response = await http.put(
         Uri.parse('$baseUrl/tour/pay/$tourId/'),
