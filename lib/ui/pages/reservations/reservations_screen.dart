@@ -3,6 +3,7 @@ import '../../../main.dart';
 import '../../../application/get_tour_packages_use_case.dart';
 import '../../../domain/entities/tour_package.dart';
 import '../../../domain/entities/itinerary_item.dart';
+import '../chat/package_details.dart';
 
 class ReservationsScreen extends StatefulWidget {
   const ReservationsScreen({super.key});
@@ -123,52 +124,6 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
               },
               style: TextButton.styleFrom(foregroundColor: const Color(0xFFF52525)),
               child: const Text('Eliminar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _payPackage(TourPackage package) {
-    // Aquí implementarías la lógica de pago
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Procesar Pago'),
-          content: Text('¿Confirmas el pago de S/ ${package.price.toStringAsFixed(2)} para "${package.title}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Simular pago exitoso
-                setState(() {
-                  final index = tourPackages.indexOf(package);
-                  if (index != -1) {
-                    tourPackages[index] = TourPackage(
-                      userId: package.userId,
-                      title: package.title,
-                      description: package.description,
-                      startDate: package.startDate,
-                      days: package.days,
-                      quantity: package.quantity,
-                      price: package.price,
-                      isPaid: true, // Cambiar estado a pagado
-                      itinerary: package.itinerary,
-                    );
-                  }
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Pago procesado exitosamente')),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF52525)),
-              child: const Text('Pagar', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -480,8 +435,12 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                             ),
                             ElevatedButton(
                               onPressed: () {
-                                // Navegar a detalles del paquete
-                                // Navigator.push(context, MaterialPageRoute(builder: (context) => PackageDetails(package: package)));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => PackageDetails(package: package, isFromChat: false,)
+                                  ),
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF52525),
@@ -674,16 +633,28 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: () => _payPackage(package),
-                              icon: const Icon(Icons.payment, size: 16),
-                              label: const Text('Pagar Ahora'),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => PackageDetails(package: package, isFromChat: false)
+                                  ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green[600],
-                                foregroundColor: Colors.white,
+                                backgroundColor: const Color(0xFFF52525),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              ),
+                              child: const Text(
+                                'Ver Detalles',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],

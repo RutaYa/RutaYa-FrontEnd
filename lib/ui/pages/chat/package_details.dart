@@ -7,10 +7,12 @@ import 'pay_package_screen.dart';
 
 class PackageDetails extends StatefulWidget {
   final TourPackage package;
+  final bool isFromChat;
 
   const PackageDetails({
     super.key,
     required this.package,
+    required this.isFromChat,
   });
 
   @override
@@ -313,7 +315,9 @@ class _PackageDetailsState extends State<PackageDetails> {
             ),
             const SizedBox(height: 32),
             // Botones de acción
-            Column(
+            widget.package.isPaid
+                ? const SizedBox.shrink() // No mostrar nada si ya está pagado
+                : Column(
               children: [
                 // Botón de pagar ahora
                 SizedBox(
@@ -324,7 +328,7 @@ class _PackageDetailsState extends State<PackageDetails> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => PayPackageScreen(package: widget.package)
+                          builder: (context) => PayPackageScreen(package: widget.package),
                         ),
                       );
                     },
@@ -347,7 +351,8 @@ class _PackageDetailsState extends State<PackageDetails> {
                 ),
                 const SizedBox(height: 12),
                 // Botón de guardar para después
-                SizedBox(
+                widget.isFromChat
+                    ? SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
@@ -383,9 +388,12 @@ class _PackageDetailsState extends State<PackageDetails> {
                       ),
                     ),
                   ),
-                ),
+                )
+                    : const SizedBox.shrink(), // Si no se debe mostrar, renderiza un widget vacío
+
               ],
             ),
+
             const SizedBox(height: 20),
           ],
         ),

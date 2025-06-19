@@ -518,7 +518,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => PackageDetails(package: package)
+                                      builder: (context) => PackageDetails(package: package, isFromChat: true)
                                   ),
                                 );
                               },
