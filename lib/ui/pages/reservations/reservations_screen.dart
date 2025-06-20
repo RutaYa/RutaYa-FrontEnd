@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../main.dart';
 import '../../../application/get_tour_packages_use_case.dart';
+import '../../../application/delete_tour_package_use_case.dart';
 import '../../../domain/entities/tour_package.dart';
 import '../../../domain/entities/itinerary_item.dart';
 import '../chat/package_details.dart';
@@ -16,6 +17,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   List<TourPackage> tourPackages = [];
   bool isLoading = false;
   String? errorMessage;
+  bool _isDeletePackageLoading = false;
 
   @override
   void initState() {
@@ -85,7 +87,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
       ];
-      return '${date.day} de ${months[date.month - 1]}';
+      return '${date.day} de ${months[date.month - 1]} de ${date.year}';
     } catch (e) {
       return dateString;
     }
@@ -94,7 +96,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   String _formatDateTime(String dateString) {
     try {
       final DateTime date = DateTime.parse(dateString);
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} hrs';
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateString;
     }
@@ -104,51 +106,103 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Eliminar Reserva'),
-          content: Text('¿Estás seguro de que deseas eliminar "${package.title}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  tourPackages.remove(package);
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reserva eliminada')),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFFF52525)),
-              child: const Text('Eliminar'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Eliminar Reserva'),
+              content: Text('¿Estás seguro de que deseas eliminar "${package.title}"?'),
+              actions: [
+                TextButton(
+                  onPressed: _isDeletePackageLoading ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: _isDeletePackageLoading
+                      ? null
+                      : () => _confirmAndDeletePackage(package, setStateDialog),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFDC2626),
+                  ),
+                  child: _isDeletePackageLoading
+                      ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDC2626)),
+                    ),
+                  )
+                      : const Text('Eliminar'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
+  Future<void> _confirmAndDeletePackage(TourPackage package, void Function(void Function()) setStateDialog) async {
+    setStateDialog(() => _isDeletePackageLoading = true);
+
+    try {
+      final deleteTourPackageUseCase = getIt<DeleteTourPackageUseCase>();
+      final success = await deleteTourPackageUseCase.deleteTourPackage(package.id);
+
+      if (success) {
+        if (mounted) {
+          Navigator.of(context).pop(); // Cierra el diálogo
+          setState(() {
+            tourPackages.remove(package);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reserva eliminada')),
+          );
+        }
+      } else {
+        _showErrorSnackBar('No se pudo eliminar la reserva.');
+        setStateDialog(() => _isDeletePackageLoading = false);
+      }
+    } catch (e) {
+      print('❌ Error al eliminar la reserva: $e');
+      _showErrorSnackBar('Error al eliminar la reserva.');
+      setStateDialog(() => _isDeletePackageLoading = false);
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
           'Mis Reservaciones',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            fontSize: 25,
           ),
         ),
-        backgroundColor: const Color(0xFFF52525),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.black87),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: Colors.grey[200],
+          ),
+        ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFF52525)))
+          ? const Center(child: CircularProgressIndicator(color: Colors.grey))
           : errorMessage != null
           ? Center(
         child: Column(
@@ -164,8 +218,11 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadReservationData,
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF52525)),
-              child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626), // Botón rojo elegante
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Reintentar'),
             ),
           ],
         ),
@@ -191,7 +248,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
         ),
       )
           : RefreshIndicator(
-        color: const Color(0xFFF52525),
+        color: const Color(0xFFDC2626), // Indicador de refresh rojo
         onRefresh: _loadReservationData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -204,11 +261,11 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 4,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF52525),
-                        borderRadius: BorderRadius.all(Radius.circular(2)),
+                      width: 3,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDC2626), // Rojo elegante
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -216,24 +273,8 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                       'Reservas Confirmadas',
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF52525),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${reservedPackages.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
                       ),
                     ),
                   ],
@@ -248,11 +289,11 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 4,
-                      height: 24,
+                      width: 3,
+                      height: 20,
                       decoration: BoxDecoration(
-                        color: Colors.orange[600],
-                        borderRadius: const BorderRadius.all(Radius.circular(2)),
+                        color: Colors.amber[700],
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -260,24 +301,8 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                       'Pendientes de Pago',
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[600],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${pendingPackages.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
                       ),
                     ),
                   ],
@@ -294,177 +319,137 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
 
   Widget _buildReservedPackageCard(TourPackage package) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono circular
-          Container(
-            width: 32,
-            height: 32,
-            margin: const EdgeInsets.only(right: 12, top: 4),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFF52525), Color(0xFFF52525)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_circle,
-              color: Colors.white,
-              size: 16,
+          // Header con título y estado
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    package.title,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                )
+              ],
             ),
           ),
-          // Contenido principal
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!, width: 1),
+
+          // Descripción
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              package.description,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                height: 1.4,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header con fecha
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF52525),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Información de la reserva
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  _formatDate(package.startDate),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  _formatDateTime(package.startDate),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.people, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  '${package.quantity} ${package.quantity == 1 ? 'Adulto' : 'Adultos'}',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Separador
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            color: Colors.grey[200],
+          ),
+
+          // Footer con precio y botón
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'S/ ${package.price.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2C2C2C), // Precio en rojo elegante
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PackageDetails(package: package, isFromChat: false)
                       ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF52525),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDate(package.startDate),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'PAGADO',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                   ),
-                  // Contenido principal
-                  Container(
-                    color: Colors.grey[100],
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        Text(
-                          package.title,
-                          style: TextStyle(
-                            color: Colors.grey[800],
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          package.description,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          height: 3,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(2),
-                            gradient: LinearGradient(
-                              colors: [Colors.grey[300]!, Colors.grey[400]!],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, color: Colors.grey[500], size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatDateTime(package.startDate),
-                              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(Icons.people, color: Colors.grey[500], size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${package.quantity} ${package.quantity == 1 ? 'Adulto' : 'Adultos'}',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'S/ ${package.price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => PackageDetails(package: package, isFromChat: false,)
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF52525),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: const Text(
-                                'Ver Detalles',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                  child: const Text(
+                    'Ver Detalles',
+                    style: TextStyle(
+                      color: Color(0xFFFFFFFF), // Texto rojo
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -474,197 +459,169 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
 
   Widget _buildPendingPackageCard(TourPackage package) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono circular
-          Container(
-            width: 32,
-            height: 32,
-            margin: const EdgeInsets.only(right: 12, top: 4),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange[600]!, Colors.orange[600]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.schedule,
-              color: Colors.white,
-              size: 16,
+          // Header con título, estado y eliminar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    package.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.amber[200]!),
+                  ),
+                  child: Text(
+                    'PENDIENTE',
+                    style: TextStyle(
+                      color: Colors.amber[700],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _deletePendingPackage(package),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          // Contenido principal
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!, width: 1),
+
+          // Descripción
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              package.description,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                height: 1.4,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header con fecha y botón eliminar
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[600],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Información de la reserva
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  _formatDate(package.startDate),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  _formatDateTime(package.startDate),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.people, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 6),
+                Text(
+                  '${package.quantity} ${package.quantity == 1 ? 'Adulto' : 'Adultos'}',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Separador
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            color: Colors.grey[200],
+          ),
+
+          // Footer con precio y botón
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'S/ ${package.price.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2C2C2C), // Precio en rojo elegante
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PackageDetails(package: package, isFromChat: false)
                       ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF52525),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDate(package.startDate),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'PENDIENTE',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => _deletePendingPackage(package),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                   ),
-                  // Contenido principal
-                  Container(
-                    color: Colors.grey[100],
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        Text(
-                          package.title,
-                          style: TextStyle(
-                            color: Colors.grey[800],
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          package.description,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          height: 3,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(2),
-                            gradient: LinearGradient(
-                              colors: [Colors.orange[300]!, Colors.orange[400]!],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, color: Colors.grey[500], size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatDateTime(package.startDate),
-                              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(Icons.people, color: Colors.grey[500], size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${package.quantity} ${package.quantity == 1 ? 'Adulto' : 'Adultos'}',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'S/ ${package.price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => PackageDetails(package: package, isFromChat: false)
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF52525),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: const Text(
-                                'Ver Detalles',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                  child: const Text(
+                    'Ver Detalles',
+                    style: TextStyle(
+                      color: Color(0xFFFFFFFF), // Texto rojo
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
