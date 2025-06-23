@@ -24,7 +24,7 @@ class LocalStorageService {
 
   Future<Database> initDB() async {
     String path = await getDatabasesPath();
-    //await deleteDatabase(join(path, 'rutaya.db'));
+    await deleteDatabase(join(path, 'rutaya.db'));
     print("Database path: $path");
 
     return await openDatabase(

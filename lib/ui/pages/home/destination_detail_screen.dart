@@ -150,11 +150,13 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           size: 16,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          widget.destination.location,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            widget.destination.location,
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         const SizedBox(width: 16),
