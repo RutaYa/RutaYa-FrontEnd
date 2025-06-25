@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'common/api_constants.dart';
 import '../../domain/entities/destination_rate.dart';
 import '../../domain/entities/package_rate.dart';
+import '../../domain/entities/community_response.dart';
 import '../repositories/local_storage_service.dart';
 
 class RateApi {
@@ -132,4 +133,27 @@ class RateApi {
       return [];
     }
   }
+
+  Future<CommunityResponse?> getCommunityRate() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/community/list/'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return CommunityResponse.fromJson(responseData);
+      } else {
+        print('Error ${response.statusCode}: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error al obtener datos de la comunidad: $e');
+      return null;
+    }
+  }
+
 }

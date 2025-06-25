@@ -1,5 +1,6 @@
 import '../../domain/entities/package_rate.dart';
 import '../../domain/entities/destination_rate.dart';
+import '../../domain/entities/community_response.dart';
 import '../../domain/repositories/rate_repository.dart';
 import '../api/rate_api.dart';
 
@@ -46,5 +47,10 @@ class RateRepositoryImpl implements RateRepository {
   @override
   Future<List<DestinationRate>?> getRatedDestinations() async {
     return await rateApi.getRatedDestinations();
+  }
+
+  @override
+  Future<CommunityResponse?> getCommunityRate() async {
+    return await rateApi.getCommunityRate();
   }
 }

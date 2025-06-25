@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/destination.dart';
 import '../../../application/alter_favorite_use_case.dart';
+import '../../../application/rate_destination_use_case.dart';
 import '../../../main.dart';
 import '../../../core/routes/app_routes.dart';
 
@@ -19,6 +20,7 @@ class DestinationDetailScreen extends StatefulWidget {
 }
 
 class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
+  bool _isLoading = false;
   int _selectedRating = 0;
   final TextEditingController _commentController = TextEditingController();
 
@@ -183,10 +185,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _selectedRating > 0 ? () {
+                        onPressed: (_selectedRating > 0 && !_isLoading) ? () {
                           _submitRating();
-                          Navigator.of(context).pop();
-                          _clearRatingData();
                         } : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber,
@@ -196,10 +196,19 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
+                        child: _isLoading
+                            ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                            : Text(
                           'Enviar Calificación',
                           style: TextStyle(
-                            color: _selectedRating > 0 ? Colors.white : Colors.grey[600],
+                            color: (_selectedRating > 0 && !_isLoading) ? Colors.white : Colors.grey[600],
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -219,21 +228,73 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     });
   }
 
-  void _submitRating() {
-    // TODO: Implementar la lógica para enviar la calificación del destino
-    // print('Rating: $_selectedRating');
-    // print('Comment: ${_commentController.text}');
-    // print('Destination ID: ${widget.destination.id}');
+  Future<void> _submitRating() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Mostrar mensaje de éxito
+    try {
+      final rateDestinationUseCase = getIt<RateDestinationUseCase>();
+
+      final now = DateTime.now();
+      final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+      final success = await rateDestinationUseCase.rateDestination(
+        widget.destination.id,
+        _selectedRating.toInt(),
+        _commentController.text,
+        formattedDate,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (success) {
+        _clearRatingData();
+        Navigator.of(context).pop();
+        _showSuccessMessage('Destino calificado. Puedes verlo en la sección de "Comunidad"');
+      } else {
+        _clearRatingData();
+        Navigator.of(context).pop();
+        _showErrorMessage('No se pudo calificar el destino. Intenta nuevamente.');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _clearRatingData();
+      Navigator.of(context).pop();
+      _showErrorMessage('Error al calificar el destino: ${e.toString()}');
+    }
+  }
+
+  void _showSuccessMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          'Gracias por tu calificación',
+        content: Text(
+          message,
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFFF52525),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
