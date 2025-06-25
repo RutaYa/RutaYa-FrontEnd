@@ -1,0 +1,50 @@
+import '../../domain/entities/package_rate.dart';
+import '../../domain/entities/destination_rate.dart';
+import '../../domain/repositories/rate_repository.dart';
+import '../api/rate_api.dart';
+
+class RateRepositoryImpl implements RateRepository {
+  final RateApi rateApi;
+
+  RateRepositoryImpl(this.rateApi);
+
+  @override
+  Future<bool> rateDestination({
+    required int destinationId,
+    required int stars,
+    required String comment,
+    required String createdAt,
+  }) async {
+    return await rateApi.createRatedDestination(
+      destinationId: destinationId,
+      stars: stars,
+      comment: comment,
+      createdAt: createdAt,
+    );
+  }
+
+  @override
+  Future<bool> ratePackage({
+    required int tourPackageId,
+    required int stars,
+    required String comment,
+    required String createdAt,
+  }) async {
+    return await rateApi.createRatedPackage(
+      tourPackageId: tourPackageId,
+      stars: stars,
+      comment: comment,
+      createdAt: createdAt,
+    );
+  }
+
+  @override
+  Future<List<PackageRate>?> getRatedPackages() async {
+    return await rateApi.getRatedPackages();
+  }
+
+  @override
+  Future<List<DestinationRate>?> getRatedDestinations() async {
+    return await rateApi.getRatedDestinations();
+  }
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../application/rate_package_use_case.dart';
 import '../../../domain/entities/tour_package.dart';
 import '../../../application/save_tour_package_use_case.dart';
 import '../../../main.dart';
@@ -60,11 +61,11 @@ class _PackageDetailsState extends State<PackageDetails> {
     }
   }
 
-  void _showSuccessMessage() {
+  void _showSuccessMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          'Paquete guardado. Puedes verlo en la sección de "Reservas"',
+        content: Text(
+          message,
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.green,
@@ -108,7 +109,7 @@ class _PackageDetailsState extends State<PackageDetails> {
       });
 
       if (success) {
-        _showSuccessMessage();
+        _showSuccessMessage('Paquete calificado. Puedes verlo en la sección de "Reservas"');
       } else {
         _showErrorMessage('No se pudo guardar el paquete. Intenta nuevamente.');
       }
@@ -249,10 +250,8 @@ class _PackageDetailsState extends State<PackageDetails> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _selectedRating > 0 ? () {
+                        onPressed: (_selectedRating > 0 && !_isLoading) ? () {
                           _submitRating();
-                          Navigator.of(context).pop();
-                          _clearRatingData();
                         } : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber,
@@ -262,10 +261,19 @@ class _PackageDetailsState extends State<PackageDetails> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
+                        child: _isLoading
+                            ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                            : Text(
                           'Enviar Calificación',
                           style: TextStyle(
-                            color: _selectedRating > 0 ? Colors.white : Colors.grey[600],
+                            color: (_selectedRating > 0 && !_isLoading) ? Colors.white : Colors.grey[600],
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -285,26 +293,45 @@ class _PackageDetailsState extends State<PackageDetails> {
     });
   }
 
-  void _submitRating() {
-    // TODO: Implementar la lógica para enviar la calificación
-    // print('Rating: $_selectedRating');
-    // print('Comment: ${_commentController.text}');
+  Future<void> _submitRating() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Mostrar mensaje de éxito
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Gracias por tu calificación',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
+    try {
+      final ratePackageUseCase = getIt<RatePackageUseCase>();
+
+      final now = DateTime.now();
+      final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+      final success = await ratePackageUseCase.ratePackage(
+        widget.package.id,
+        _selectedRating.toInt(),
+        _commentController.text, // usa .text, no .toString()
+        formattedDate,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (success) {
+        _clearRatingData();
+        Navigator.of(context).pop();
+        _showSuccessMessage('Paquete calificado. Puedes verlo en la sección de "Comunidad"');
+      } else {
+        _clearRatingData();
+        Navigator.of(context).pop();
+        _showErrorMessage('No se pudo calificar el paquete. Intenta nuevamente.');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _clearRatingData();
+      Navigator.of(context).pop();
+      _showErrorMessage('Error al calificar el paquete: ${e.toString()}');
+    }
   }
 
   @override

@@ -21,18 +21,24 @@ import 'application/change_password_use_case.dart';
 import 'application/get_user_preferences.dart';
 import 'application/save_user_preferences_use_case.dart';
 import 'application/get_tour_packages_use_case.dart';
+import 'application/rate_destination_use_case.dart';
+import 'application/rate_package_use_case.dart';
+import 'application/get_rated_destinations_use_case.dart';
+import 'application/get_rated_packages_use_case.dart';
 //repository impl
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
 import 'data/repositories/travels_repository_impl.dart';
 import 'data/repositories/preferences_repository_impl.dart';
 import 'data/repositories/tour_repository_impl.dart';
+import 'data/repositories/rate_repository_impl.dart';
 //repository
 import 'domain/repositories/user_repository.dart';
 import 'domain/repositories/home_repository.dart';
 import 'domain/repositories/travels_repository.dart';
 import 'domain/repositories/preferences_repository.dart';
 import 'domain/repositories/tour_repository.dart';
+import 'domain/repositories/rate_repository.dart';
 //api
 import 'data/api/user_api.dart';
 import 'data/api/home_api.dart';
@@ -40,6 +46,7 @@ import 'data/api/travel_api.dart';
 import 'data/api/preference_api.dart';
 import 'data/api/message_api.dart';
 import 'data/api/tour_api.dart';
+import 'data/api/rate_api.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 final getIt = GetIt.instance;
@@ -52,6 +59,7 @@ void main() {
   getIt.registerLazySingleton<MessageApi>(() => MessageApi());
   getIt.registerLazySingleton<PreferenceApi>(() => PreferenceApi());
   getIt.registerLazySingleton<TourApi>(() => TourApi());
+  getIt.registerLazySingleton<RateApi>(() => RateApi());
 
   // Data Layer - Repositories
   getIt.registerLazySingleton<UserRepository>(() =>
@@ -71,6 +79,9 @@ void main() {
   );
   getIt.registerLazySingleton<TourRepository>(() =>
       TourRepositoryImpl(getIt<TourApi>())
+  );
+  getIt.registerLazySingleton<RateRepository>(() =>
+      RateRepositoryImpl(getIt<RateApi>())
   );
 
   // Domain Layer (use cases)
@@ -118,6 +129,18 @@ void main() {
   );
   getIt.registerLazySingleton<GetTourPackagesUseCase>(() =>
       GetTourPackagesUseCase(getIt<TourRepository>())
+  );
+  getIt.registerLazySingleton<RatePackageUseCase>(() =>
+      RatePackageUseCase(getIt<RateRepository>())
+  );
+  getIt.registerLazySingleton<RateDestinationUseCase>(() =>
+      RateDestinationUseCase(getIt<RateRepository>())
+  );
+  getIt.registerLazySingleton<GetRatedPackagesUseCase>(() =>
+      GetRatedPackagesUseCase(getIt<RateRepository>())
+  );
+  getIt.registerLazySingleton<GetRatedDestinationsUseCase>(() =>
+      GetRatedDestinationsUseCase(getIt<RateRepository>())
   );
 
   runApp(const MyApp());
