@@ -21,6 +21,8 @@ class PackageDetails extends StatefulWidget {
 
 class _PackageDetailsState extends State<PackageDetails> {
   bool _isLoading = false;
+  int _selectedRating = 0;
+  final TextEditingController _commentController = TextEditingController();
 
   // Función para formatear la fecha
   String _formatDate(String dateString) {
@@ -128,6 +130,189 @@ class _PackageDetailsState extends State<PackageDetails> {
     );
   }
 
+  void _clearRatingData() {
+    setState(() {
+      _selectedRating = 0;
+      _commentController.clear();
+    });
+  }
+
+  void _showRatingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header con título y botón cerrar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          '¿Qué te pareció?',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _clearRatingData();
+                          },
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.grey,
+                            size: 24,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Subtítulo
+                    const Text(
+                      'Por favor, califica este paquete',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Estrellas de calificación
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return GestureDetector(
+                          onTap: () {
+                            setDialogState(() {
+                              _selectedRating = index + 1;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(
+                              Icons.star,
+                              size: 40,
+                              color: index < _selectedRating
+                                  ? Colors.amber
+                                  : Colors.grey[300],
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 24),
+                    // Campo de comentario
+                    TextField(
+                      controller: _commentController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Deja un comentario',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.amber),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Botón enviar
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _selectedRating > 0 ? () {
+                          _submitRating();
+                          Navigator.of(context).pop();
+                          _clearRatingData();
+                        } : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          disabledBackgroundColor: Colors.grey[300],
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Enviar Calificación',
+                          style: TextStyle(
+                            color: _selectedRating > 0 ? Colors.white : Colors.grey[600],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).then((_) {
+      // Se ejecuta cuando el dialog se cierra (incluso si se toca afuera)
+      _clearRatingData();
+    });
+  }
+
+  void _submitRating() {
+    // TODO: Implementar la lógica para enviar la calificación
+    // print('Rating: $_selectedRating');
+    // print('Comment: ${_commentController.text}');
+
+    // Mostrar mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Gracias por tu calificación',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,21 +367,66 @@ class _PackageDetailsState extends State<PackageDetails> {
                       ),
                     ),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.calendar_today,
-                          color: Colors.grey[600],
-                          size: 20,
+                        // Sección izquierda con fecha
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              color: Colors.grey[600],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _formatDate(widget.package.startDate),
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatDate(widget.package.startDate),
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                        // Botón calificar a la derecha (solo si está pagado y no es desde chat)
+                        if (widget.package.isPaid && !widget.isFromChat)
+                          InkWell(
+                            onTap: _showRatingDialog,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.amber.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.star_outline,
+                                    size: 16,
+                                    color: Colors.amber[700],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Calificar',
+                                    style: TextStyle(
+                                      color: Colors.amber[700],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -314,10 +544,8 @@ class _PackageDetailsState extends State<PackageDetails> {
               ),
             ),
             const SizedBox(height: 32),
-            // Botones de acción
-            widget.package.isPaid
-                ? const SizedBox.shrink() // No mostrar nada si ya está pagado
-                : Column(
+            // Botones de acción - Solo para paquetes no pagados
+            !widget.package.isPaid ? Column(
               children: [
                 // Botón de pagar ahora
                 SizedBox(
@@ -328,7 +556,8 @@ class _PackageDetailsState extends State<PackageDetails> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PayPackageScreen(package: widget.package, isFromChat: widget.isFromChat),
+                          builder: (context) => PayPackageScreen(
+                              package: widget.package, isFromChat: widget.isFromChat),
                         ),
                       );
                     },
@@ -350,7 +579,7 @@ class _PackageDetailsState extends State<PackageDetails> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Botón de guardar para después
+                // Botón de guardar para después (solo si es desde chat)
                 widget.isFromChat
                     ? SizedBox(
                   width: double.infinity,
@@ -389,10 +618,9 @@ class _PackageDetailsState extends State<PackageDetails> {
                     ),
                   ),
                 )
-                    : const SizedBox.shrink(), // Si no se debe mostrar, renderiza un widget vacío
-
+                    : const SizedBox.shrink(),
               ],
-            ),
+            ) : const SizedBox.shrink(),
 
             const SizedBox(height: 20),
           ],
