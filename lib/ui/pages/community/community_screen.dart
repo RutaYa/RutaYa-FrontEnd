@@ -6,6 +6,8 @@ import '../../../main.dart';
 import '../../../application/get_community_rate_use_case.dart';
 import 'all_destinations_rate.dart';
 import 'all_package_rate.dart';
+import '../home/destination_detail_screen.dart';
+import '../chat/package_details.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -93,13 +95,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _navigateToDestinationDetail(DestinationRate rate) {
-    // TODO: Navegar a la página de detalle del destino
-    print('Navegar a detalle del destino: ${rate.destination.name}');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DestinationDetailScreen(
+          destination: rate.destination,
+          categoryName: 'Destino turistico',
+        ),
+      ),
+    );
   }
 
   void _navigateToPackageDetail(PackageRate rate) {
-    // TODO: Navegar a la página de detalle del paquete
-    print('Navegar a detalle del paquete: ${rate.tourPackage.title}');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PackageDetails(
+          package: rate.tourPackage,
+          isFromChat: false,
+        ),
+      ),
+    );
   }
 
   @override
