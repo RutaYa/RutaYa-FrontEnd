@@ -55,6 +55,230 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  String _formatDate(String dateString) {
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      final List<String> months = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      return '${date.day} de ${months[date.month - 1]} de ${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  void _showDestinationDetails(DestinationRate rate) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(rate.destination.name),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Información del usuario
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.blue[100],
+                      child: Text(
+                        rate.user.firstName.isNotEmpty
+                            ? rate.user.firstName[0].toUpperCase()
+                            : 'U',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${rate.user.firstName} ${rate.user.lastName}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            _formatDate(rate.createdAt),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Calificación
+                Row(
+                  children: [
+                    const Text('Calificación: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ...List.generate(5, (index) {
+                      return Icon(
+                        index < rate.stars ? Icons.star : Icons.star_border,
+                        size: 20,
+                        color: Colors.amber,
+                      );
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Comentario completo
+                if (rate.comment.isNotEmpty) ...[
+                  const Text('Comentario:', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text(
+                    rate.comment,
+                    style: const TextStyle(fontSize: 14, height: 1.4),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPackageDetails(PackageRate rate) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(rate.tourPackage.title),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Información del usuario
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.green[100],
+                      child: Text(
+                        rate.user.firstName.isNotEmpty
+                            ? rate.user.firstName[0].toUpperCase()
+                            : 'U',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${rate.user.firstName} ${rate.user.lastName}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            _formatDate(rate.createdAt),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Información del paquete
+                Text(
+                  rate.tourPackage.description,
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text('${rate.tourPackage.days} días'),
+                    const SizedBox(width: 16),
+                    Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
+                    Text(
+                      'S/ ${rate.tourPackage.price.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Calificación
+                Row(
+                  children: [
+                    const Text('Calificación: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ...List.generate(5, (index) {
+                      return Icon(
+                        index < rate.stars ? Icons.star : Icons.star_border,
+                        size: 20,
+                        color: Colors.amber,
+                      );
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Comentario completo
+                if (rate.comment.isNotEmpty) ...[
+                  const Text('Comentario:', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text(
+                    rate.comment,
+                    style: const TextStyle(fontSize: 14, height: 1.4),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -257,27 +481,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.network(
-                    rate.destination.imageUrl,
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 50,
-                        height: 50,
-                        color: Colors.grey[300],
-                        child: Icon(
-                          Icons.location_on,
-                          color: Colors.grey[500],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,27 +507,60 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           ),
 
-          // Comentario si existe
+          // Comentario con vista previa y botón "Ver más"
           if (rate.comment.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              rate.comment,
+              rate.comment.length > 100
+                  ? '${rate.comment.substring(0, 100)}...'
+                  : rate.comment,
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
                 height: 1.4,
               ),
             ),
+            if (rate.comment.length > 100) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _showDestinationDetails(rate),
+                child: Text(
+                  'Ver más',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue[600],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ],
 
-          // Fecha
+          // Fecha formateada y botón de detalle
           const SizedBox(height: 8),
-          Text(
-            rate.createdAt,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDate(rate.createdAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+              if (rate.comment.length <= 100)
+                GestureDetector(
+                  onTap: () => _showDestinationDetails(rate),
+                  child: Text(
+                    'Ver detalle',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -422,16 +658,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  rate.tourPackage.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -468,27 +694,60 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           ),
 
-          // Comentario si existe
+          // Comentario con vista previa y botón "Ver más"
           if (rate.comment.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              rate.comment,
+              rate.comment.length > 100
+                  ? '${rate.comment.substring(0, 100)}...'
+                  : rate.comment,
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
                 height: 1.4,
               ),
             ),
+            if (rate.comment.length > 100) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _showPackageDetails(rate),
+                child: Text(
+                  'Ver más',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue[600],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ],
 
-          // Fecha
+          // Fecha formateada y botón de detalle
           const SizedBox(height: 8),
-          Text(
-            rate.createdAt,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDate(rate.createdAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+              if (rate.comment.length <= 100)
+                GestureDetector(
+                  onTap: () => _showPackageDetails(rate),
+                  child: Text(
+                    'Ver detalle',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
