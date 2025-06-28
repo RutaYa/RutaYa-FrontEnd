@@ -272,6 +272,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
         builder: (context) => DestinationDetailScreen(
           destination: destination,
           categoryName: categoryName,
+          isFromHome: true,
         ),
       ),
     );

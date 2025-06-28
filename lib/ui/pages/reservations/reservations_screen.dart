@@ -10,10 +10,10 @@ class ReservationsScreen extends StatefulWidget {
   const ReservationsScreen({super.key});
 
   @override
-  State<ReservationsScreen> createState() => _ReservationsScreenState();
+  State<ReservationsScreen> createState() => ReservationsScreenState();
 }
 
-class _ReservationsScreenState extends State<ReservationsScreen> {
+class ReservationsScreenState extends State<ReservationsScreen> {
   List<TourPackage> tourPackages = [];
   bool isLoading = false;
   String? errorMessage;
@@ -27,6 +27,13 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
       print("📱 PostFrameCallback ejecutado - iniciando carga");
       _loadReservationData();
     });
+  }
+
+  void refreshIfNeeded() {
+    if (mounted) {
+      print('🔄 Community tab seleccionada - Refrescando datos');
+      _loadReservationData();
+    }
   }
 
   @override

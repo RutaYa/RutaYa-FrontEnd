@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/package_rate.dart';
+import '../chat/package_details.dart';
 
 class AllPackageRate extends StatefulWidget {
   final List<PackageRate> packageRates;
@@ -28,7 +29,15 @@ class _AllPackageRateState extends State<AllPackageRate> {
   }
 
   void _showPackageDetails(PackageRate rate) {
-
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PackageDetails(
+          package: rate.tourPackage,
+          isFromChat: false,
+        ),
+      ),
+    );
   }
 
   @override

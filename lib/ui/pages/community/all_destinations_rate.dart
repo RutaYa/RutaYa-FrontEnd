@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/destination_rate.dart';
+import '../home/destination_detail_screen.dart';
 
 class AllDestinationsRate extends StatefulWidget {
   final List<DestinationRate> destinationRates;
@@ -28,7 +29,16 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
   }
 
   void _showDestinationDetails(DestinationRate rate) {
-
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DestinationDetailScreen(
+          destination: rate.destination,
+          categoryName: 'Destino turistico',
+          isFromHome: false,
+        ),
+      ),
+    );
   }
 
   @override

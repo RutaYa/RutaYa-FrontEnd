@@ -103,6 +103,7 @@ class _HomeScreenState extends State {
         builder: (context) => DestinationDetailScreen(
           destination: destination,
           categoryName: category,
+          isFromHome: true,
         ),
       ),
     );

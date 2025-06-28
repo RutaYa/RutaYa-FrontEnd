@@ -21,19 +21,24 @@ class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
   Destination? _destination;
 
+  // 🔥 GlobalKey para acceder al estado de CommunityScreen
+  final GlobalKey<CommunityScreenState> _communityKey = GlobalKey<CommunityScreenState>();
+  final GlobalKey<ReservationsScreenState> _reservationKey = GlobalKey<ReservationsScreenState>();
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _destination = widget.destination;
 
-    // ✅ Debug para ver qué llega
     print('🏠 MainPage inicializado:');
     print('   - Index: $_currentIndex');
     print('   - Destination: ${_destination?.name}');
   }
 
   void _onTabTapped(int index) {
+    final previousIndex = _currentIndex;
+
     setState(() {
       _currentIndex = index;
 
@@ -42,6 +47,22 @@ class _MainPageState extends State<MainPage> {
         _destination = null;
       }
     });
+
+    if (index == 3 && previousIndex != 3) {
+
+      // Pequeño delay para asegurar que el widget esté construido
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _communityKey.currentState?.refreshIfNeeded();
+      });
+    }
+
+    if (index == 2 && previousIndex != 2) {
+
+      // Pequeño delay para asegurar que el widget esté construido
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _reservationKey.currentState?.refreshIfNeeded();
+      });
+    }
   }
 
   @override
@@ -52,8 +73,8 @@ class _MainPageState extends State<MainPage> {
         children: [
           const HomeScreen(),                          // 0
           ChatScreen(destination: _destination),       // 1 - ✅ Pasa el destination
-          const ReservationsScreen(),                  // 2
-          const CommunityScreen(),                     // 3
+          ReservationsScreen(key: _reservationKey),                  // 2
+          CommunityScreen(key: _communityKey),         // 3 - 🔥 Agregamos el GlobalKey
           const ProfileScreen(),                       // 4
         ],
       ),

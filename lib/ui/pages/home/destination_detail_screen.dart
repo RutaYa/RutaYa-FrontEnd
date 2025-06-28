@@ -8,11 +8,13 @@ import '../../../core/routes/app_routes.dart';
 class DestinationDetailScreen extends StatefulWidget {
   final Destination destination;
   final String categoryName;
+  final bool isFromHome;
 
   const DestinationDetailScreen({
     Key? key,
     required this.destination,
-    required this.categoryName
+    required this.categoryName,
+    required this.isFromHome
   }) : super(key: key);
 
   @override
@@ -336,7 +338,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
               ),
             ),
             // Botón calificar en el AppBar
-            InkWell(
+            widget.isFromHome
+                ? InkWell(
               onTap: _showRatingDialog,
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -372,17 +375,21 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                   ],
                 ),
               ),
-            ),
+            )
+                : const SizedBox.shrink(),
+
           ],
         ),
         actions: [
-          IconButton(
+          widget.isFromHome
+              ? IconButton(
             icon: Icon(
               widget.destination.isFavorite ? Icons.favorite : Icons.favorite_border,
               color: widget.destination.isFavorite ? Colors.red : Colors.black,
             ),
             onPressed: _toggleFavorite,
-          ),
+          )
+              : const SizedBox.shrink(),
         ],
       ),
       body: SingleChildScrollView(

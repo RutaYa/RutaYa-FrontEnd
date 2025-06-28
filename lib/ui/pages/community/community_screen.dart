@@ -13,10 +13,10 @@ class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
 
   @override
-  State<CommunityScreen> createState() => _CommunityScreenState();
+  State<CommunityScreen> createState() => CommunityScreenState();
 }
 
-class _CommunityScreenState extends State<CommunityScreen> {
+class CommunityScreenState extends State<CommunityScreen> {
   List<DestinationRate> destinationRates = [];
   List<PackageRate> packageRates = [];
   bool isLoading = false;
@@ -26,6 +26,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void initState() {
     super.initState();
     _loadCommunityData();
+  }
+
+  void refreshIfNeeded() {
+    if (mounted) {
+      print('🔄 Community tab seleccionada - Refrescando datos');
+      _loadCommunityData();
+    }
   }
 
   Future<void> _loadCommunityData() async {
@@ -101,6 +108,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         builder: (context) => DestinationDetailScreen(
           destination: rate.destination,
           categoryName: 'Destino turistico',
+          isFromHome: false,
         ),
       ),
     );
