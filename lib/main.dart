@@ -25,6 +25,7 @@ import 'application/rate_destination_use_case.dart';
 import 'application/rate_package_use_case.dart';
 import 'application/get_rated_destinations_use_case.dart';
 import 'application/get_rated_packages_use_case.dart';
+import 'application/get_community_rate_use_case.dart';
 //repository impl
 import 'data/repositories/user_repository_impl.dart';
 import 'data/repositories/home_repository_impl.dart';
@@ -141,6 +142,9 @@ void main() {
   );
   getIt.registerLazySingleton<GetRatedDestinationsUseCase>(() =>
       GetRatedDestinationsUseCase(getIt<RateRepository>())
+  );
+  getIt.registerLazySingleton<GetCommunityRateUseCase>(() =>
+      GetCommunityRateUseCase(getIt<RateRepository>())
   );
 
   runApp(const MyApp());
