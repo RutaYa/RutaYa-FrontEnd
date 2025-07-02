@@ -24,7 +24,7 @@ class LocalStorageService {
 
   Future<Database> initDB() async {
     String path = await getDatabasesPath();
-    await deleteDatabase(join(path, 'rutaya.db'));
+    //await deleteDatabase(join(path, 'rutaya.db'));
     print("Database path: $path");
 
     return await openDatabase(
@@ -32,6 +32,15 @@ class LocalStorageService {
       version: 1,
       onCreate: (db, version) async {
         print("Creating database tables...");
+
+        await db.execute('''        
+          CREATE TABLE IF NOT EXISTS UserCredentials(
+            id INTEGER PRIMARY KEY,
+            email TEXT,
+            password TEXT,
+            rememberMe INTEGER
+          )
+        ''');
 
         await db.execute(''' 
           CREATE TABLE IF NOT EXISTS User(
@@ -95,6 +104,32 @@ class LocalStorageService {
     }
 
     print("Todas las tablas han sido vaciadas.");
+  }
+
+  Future<void> saveCredentials(String email, String password, bool rememberMe) async {
+    final db = await database;
+    await db.delete('UserCredentials');
+    await db.insert('UserCredentials', {
+      'email': email,
+      'password': password,
+      'rememberMe': rememberMe ? 1 : 0,
+    });
+  }
+
+  Future<void> clearCredentials() async {
+    final db = await database;
+    await db.delete('UserCredentials');
+  }
+
+
+  Future<Map<String, dynamic>?> getCredentials() async {
+    final db = await database;
+    var results = await db.query('UserCredentials',
+        where: 'rememberMe = ?', whereArgs: [1], limit: 1);
+    if (results.isNotEmpty) {
+      return results.first;
+    }
+    return null;
   }
 
   Future saveUser(User user) async {
