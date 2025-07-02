@@ -288,6 +288,17 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     );
   }
 
+  void _navigateToComments() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.main,
+          (route) => false,
+      arguments: {
+        'initialIndex': 3
+      },
+    );
+  }
+
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -503,45 +514,45 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                         height: 1.6,
                       ),
                     ),
-                    const SizedBox(height: 32),
-
-                    // Información adicional
-                    if (widget.destination.favoritesCount != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[200]!),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.favorite,
-                              color: Colors.red,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${widget.destination.favoritesCount} personas han marcado este lugar como favorito',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
+                    const SizedBox(height: 24),
+                    // AQUÍ VA EL BOTÓN - UBICACIÓN RECOMENDADA
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Implementar navegación a comentarios
+                        _navigateToComments();
+                      },
+                      icon: Icon(
+                        Icons.forum_outlined,
+                        size: 18,
+                        color: Colors.grey[600],
+                      ),
+                      label: Text(
+                        'Ver comentarios de la comunidad',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1,
+                        ),
+                        backgroundColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-
               // Espacio para el botón flotante
               const SizedBox(height: 80),
             ],
