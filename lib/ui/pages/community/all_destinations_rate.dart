@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/destination_rate.dart';
 import '../home/destination_detail_screen.dart';
 import '../../../data/repositories/local_storage_service.dart';
+import '../../../application/delete_destination_rate_use_case.dart';
+import '../../../main.dart';
 
 class AllDestinationsRate extends StatefulWidget {
   final List<DestinationRate> destinationRates;
@@ -17,6 +19,14 @@ class AllDestinationsRate extends StatefulWidget {
 
 class _AllDestinationsRateState extends State<AllDestinationsRate> {
   final localStorageService = LocalStorageService();
+  late List<DestinationRate> localDestinationRates;
+  bool isDeleteLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    localDestinationRates = List.from(widget.destinationRates);
+  }
 
   String _formatDate(String dateString) {
     try {
@@ -44,6 +54,42 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
     );
   }
 
+  Future<void> _deleteDestinationRate(DestinationRate rate) async {
+    setState(() {
+      isDeleteLoading = true;
+    });
+
+    final deleteDestinationUseCase = getIt<DeleteDestinationRateUseCase>();
+
+    try {
+      final bool response = await deleteDestinationUseCase.deleteDestinationRated(rate.id);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response ? 'Reseña eliminada correctamente' : 'Error al eliminar la reseña'),
+          backgroundColor: response ? Colors.green : Colors.red,
+        ),
+      );
+
+      if (response) {
+        setState(() {
+          localDestinationRates.removeWhere((item) => item.id == rate.id);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error inesperado al eliminar la reseña'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isDeleteLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,10 +107,10 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(localDestinationRates),
         ),
       ),
-      body: widget.destinationRates.isEmpty
+      body: localDestinationRates.isEmpty
           ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -95,9 +141,9 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
       )
           : ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: widget.destinationRates.length,
+        itemCount: localDestinationRates.length,
         itemBuilder: (context, index) {
-          final rate = widget.destinationRates[index];
+          final rate = localDestinationRates[index];
           return _buildDestinationRateCard(rate);
         },
       ),
@@ -241,19 +287,12 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data == int.tryParse(rate.user.id.toString())) {
                     return TextButton(
-                      onPressed: () {
-                        // Aquí puedes agregar la lógica para eliminar la reseña
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Funcionalidad de eliminar pendiente'),
-                          ),
-                        );
-                      },
+                      onPressed: isDeleteLoading ? null : () => _deleteDestinationRate(rate),
                       child: Text(
                         'Eliminar',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.red,
+                          color: isDeleteLoading ? Colors.grey : Colors.red,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

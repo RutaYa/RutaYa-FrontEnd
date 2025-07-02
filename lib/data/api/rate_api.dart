@@ -176,4 +176,45 @@ class RateApi {
     }
   }
 
+  // ELIMINAR CALIFICACIÓN DE DESTINO
+  Future<bool> deleteRatedDestination(int rateId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/rate-destinations/delete/$rateId/'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ELIMINAR CALIFICACIÓN DE PAQUETE TURÍSTICO
+  Future<bool> deleteRatedPackage(int rateId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/rate-package/delete/$rateId/'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+
 }

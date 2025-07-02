@@ -4,6 +4,8 @@ import '../../../domain/entities/package_rate.dart';
 import '../../../domain/entities/community_response.dart';
 import '../../../main.dart';
 import '../../../application/get_community_rate_use_case.dart';
+import '../../../application/delete_destination_rate_use_case.dart';
+import '../../../application/delete_tour_rate_use_case.dart';
 import 'all_destinations_rate.dart';
 import 'all_package_rate.dart';
 import '../home/destination_detail_screen.dart';
@@ -21,6 +23,7 @@ class CommunityScreenState extends State<CommunityScreen> {
   List<DestinationRate> destinationRates = [];
   List<PackageRate> packageRates = [];
   bool isLoading = false;
+  bool isDeleteLoading = false;
   String? errorMessage;
   final localStorageService = LocalStorageService();
 
@@ -81,8 +84,8 @@ class CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  void _navigateToAllDestinations() {
-    Navigator.push(
+  void _navigateToAllDestinations() async {
+    final result = await Navigator.push<List<DestinationRate>>(
       context,
       MaterialPageRoute(
         builder: (context) => AllDestinationsRate(
@@ -90,6 +93,12 @@ class CommunityScreenState extends State<CommunityScreen> {
         ),
       ),
     );
+
+    if (result != null) {
+      setState(() {
+        destinationRates = result;
+      });
+    }
   }
 
   void _navigateToAllPackages() {
@@ -126,6 +135,54 @@ class CommunityScreenState extends State<CommunityScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> deleteRate(bool isDestination, dynamic rate) async {
+    setState(() {
+      isDeleteLoading = true;
+    });
+
+    final deleteDestinationUseCase = getIt<DeleteDestinationRateUseCase>();
+    final deleteTourRateUseCase = getIt<DeleteTourRateUseCase>();
+
+    try {
+      final bool response = isDestination
+          ? await deleteDestinationUseCase.deleteDestinationRated(rate.id)
+          : await deleteTourRateUseCase.deleteTourRatedPackage(rate.id);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response
+                ? 'Calificación eliminada exitosamente'
+                : 'Error al eliminar la calificación',
+          ),
+          backgroundColor: response ? Colors.green : Colors.red,
+        ),
+      );
+
+      if (response) {
+        // Actualizar las listas localmente en lugar de recargar desde la API
+        setState(() {
+          if (isDestination) {
+            destinationRates.removeWhere((item) => item.id == rate.id);
+          } else {
+            packageRates.removeWhere((item) => item.id == rate.id);
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error inesperado al eliminar la calificación'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isDeleteLoading = false;
+      });
+    }
   }
 
   void _showRatingDetailDialog(dynamic rate, bool isDestination) async{
@@ -314,12 +371,7 @@ class CommunityScreenState extends State<CommunityScreen> {
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            // Aquí puedes agregar la lógica para eliminar la reseña
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Funcionalidad de eliminar pendiente'),
-                              ),
-                            );
+                            deleteRate(isDestination, rate);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,

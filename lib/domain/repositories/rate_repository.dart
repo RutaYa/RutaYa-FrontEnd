@@ -21,4 +21,7 @@ abstract class RateRepository {
   Future<List<PackageRate>?> getRatedPackages();
   Future<List<DestinationRate>?> getRatedDestinations();
   Future<CommunityResponse?> getCommunityRate();
+  Future<bool> deleteRatedDestination(int rateId);
+  Future<bool> deleteRatedPackage(int rateId);
+
 }

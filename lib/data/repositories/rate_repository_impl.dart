@@ -54,4 +54,14 @@ class RateRepositoryImpl implements RateRepository {
   Future<CommunityResponse?> getCommunityRate() async {
     return await rateApi.getCommunityRate();
   }
+
+  @override
+  Future<bool> deleteRatedDestination(int rateId) async {
+    return await rateApi.deleteRatedDestination(rateId);
+  }
+
+  @override
+  Future<bool> deleteRatedPackage(int rateId) async {
+    return await rateApi.deleteRatedPackage(rateId);
+  }
 }
