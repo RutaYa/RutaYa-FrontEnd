@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/package_rate.dart';
 import '../chat/package_details.dart';
 import '../../../data/repositories/local_storage_service.dart';
+import '../../../application/delete_tour_rate_use_case.dart';
+import '../../../main.dart';
 
 class AllPackageRate extends StatefulWidget {
   final List<PackageRate> packageRates;
@@ -17,6 +19,14 @@ class AllPackageRate extends StatefulWidget {
 
 class _AllPackageRateState extends State<AllPackageRate> {
   final localStorageService = LocalStorageService();
+  late List<PackageRate> localPackageRates;
+  bool isDeleteLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    localPackageRates = List.from(widget.packageRates);
+  }
 
   String _formatDate(String dateString) {
     try {
@@ -43,6 +53,42 @@ class _AllPackageRateState extends State<AllPackageRate> {
     );
   }
 
+  Future<void> _deletePackageRate(PackageRate rate) async {
+    setState(() {
+      isDeleteLoading = true;
+    });
+
+    final deleteTourRateUseCase = getIt<DeleteTourRateUseCase>();
+
+    try {
+      final bool response = await deleteTourRateUseCase.deleteTourRatedPackage(rate.id);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response ? 'Reseña eliminada correctamente' : 'Error al eliminar la reseña'),
+          backgroundColor: response ? Colors.green : Colors.red,
+        ),
+      );
+
+      if (response) {
+        setState(() {
+          localPackageRates.removeWhere((item) => item.id == rate.id);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error inesperado al eliminar la reseña'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isDeleteLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,10 +106,10 @@ class _AllPackageRateState extends State<AllPackageRate> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(localPackageRates),
         ),
       ),
-      body: widget.packageRates.isEmpty
+      body: localPackageRates.isEmpty
           ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -94,9 +140,9 @@ class _AllPackageRateState extends State<AllPackageRate> {
       )
           : ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: widget.packageRates.length,
+        itemCount: localPackageRates.length,
         itemBuilder: (context, index) {
-          final rate = widget.packageRates[index];
+          final rate = localPackageRates[index];
           return _buildPackageRateCard(rate);
         },
       ),
@@ -265,19 +311,12 @@ class _AllPackageRateState extends State<AllPackageRate> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data == int.tryParse(rate.user.id.toString())) {
                     return TextButton(
-                      onPressed: () {
-                        // Aquí puedes agregar la lógica para eliminar la reseña
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Funcionalidad de eliminar pendiente'),
-                          ),
-                        );
-                      },
+                      onPressed: isDeleteLoading ? null : () => _deletePackageRate(rate),
                       child: Text(
                         'Eliminar',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.red,
+                          color: isDeleteLoading ? Colors.grey : Colors.red,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

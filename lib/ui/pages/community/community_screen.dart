@@ -101,8 +101,8 @@ class CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  void _navigateToAllPackages() {
-    Navigator.push(
+  void _navigateToAllPackages() async {
+    final result = await Navigator.push<List<PackageRate>>(
       context,
       MaterialPageRoute(
         builder: (context) => AllPackageRate(
@@ -110,6 +110,12 @@ class CommunityScreenState extends State<CommunityScreen> {
         ),
       ),
     );
+
+    if (result != null) {
+      setState(() {
+        packageRates = result;
+      });
+    }
   }
 
   void _navigateToDestinationDetail(DestinationRate rate) {
@@ -162,7 +168,7 @@ class CommunityScreenState extends State<CommunityScreen> {
       );
 
       if (response) {
-        // Actualizar las listas localmente en lugar de recargar desde la API
+        // Actualizar las listas localmente
         setState(() {
           if (isDestination) {
             destinationRates.removeWhere((item) => item.id == rate.id);
@@ -170,6 +176,9 @@ class CommunityScreenState extends State<CommunityScreen> {
             packageRates.removeWhere((item) => item.id == rate.id);
           }
         });
+
+        // Cerrar el diálogo solo si la eliminación fue exitosa
+        Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -363,21 +372,30 @@ class CommunityScreenState extends State<CommunityScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: isDeleteLoading ? null : () => Navigator.pop(context),
                         child: const Text('Cerrar'),
                       ),
                       if (userId.toString() == rate.user.id) ...[
                         const SizedBox(width: 8),
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
+                          onPressed: isDeleteLoading ? null : () {
+                            // No cerrar el diálogo, solo ejecutar deleteRate
                             deleteRate(isDestination, rate);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text('Eliminar'),
+                          child: isDeleteLoading
+                              ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                              : const Text('Eliminar'),
                         ),
                       ],
                     ],
