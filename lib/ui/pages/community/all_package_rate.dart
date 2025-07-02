@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/package_rate.dart';
 import '../chat/package_details.dart';
+import '../../../data/repositories/local_storage_service.dart';
 
 class AllPackageRate extends StatefulWidget {
   final List<PackageRate> packageRates;
@@ -15,6 +16,8 @@ class AllPackageRate extends StatefulWidget {
 }
 
 class _AllPackageRateState extends State<AllPackageRate> {
+  final localStorageService = LocalStorageService();
+
   String _formatDate(String dateString) {
     try {
       final DateTime date = DateTime.parse(dateString);
@@ -252,11 +255,37 @@ class _AllPackageRateState extends State<AllPackageRate> {
             ),
           ],
 
-          // Footer con botón de detalle
+          // Footer con botones
           const SizedBox(height: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              FutureBuilder<int?>(
+                future: localStorageService.getCurrentUserId(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data == int.tryParse(rate.user.id.toString())) {
+                    return TextButton(
+                      onPressed: () {
+                        // Aquí puedes agregar la lógica para eliminar la reseña
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Funcionalidad de eliminar pendiente'),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Eliminar',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               TextButton(
                 onPressed: () => _showPackageDetails(rate),
                 child: Text(

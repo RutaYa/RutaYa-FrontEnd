@@ -1,6 +1,7 @@
 import '../../domain/entities/package_rate.dart';
 import '../../domain/entities/destination_rate.dart';
 import '../../domain/entities/community_response.dart';
+import '../../domain/entities/request_response.dart';
 import '../../domain/repositories/rate_repository.dart';
 import '../api/rate_api.dart';
 
@@ -10,7 +11,7 @@ class RateRepositoryImpl implements RateRepository {
   RateRepositoryImpl(this.rateApi);
 
   @override
-  Future<bool> rateDestination({
+  Future<RequestResponse> rateDestination({
     required int destinationId,
     required int stars,
     required String comment,
@@ -25,7 +26,7 @@ class RateRepositoryImpl implements RateRepository {
   }
 
   @override
-  Future<bool> ratePackage({
+  Future<RequestResponse> ratePackage({
     required int tourPackageId,
     required int stars,
     required String comment,

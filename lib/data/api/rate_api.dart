@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'common/api_constants.dart';
+import '../../domain/entities/request_response.dart';
 import '../../domain/entities/destination_rate.dart';
 import '../../domain/entities/package_rate.dart';
 import '../../domain/entities/community_response.dart';
@@ -11,13 +12,12 @@ class RateApi {
   final String baseUrl = ApiConstants.baseUrl;
 
   // CREAR CALIFICACIÓN PARA DESTINO
-  Future<bool> createRatedDestination({
+  Future<RequestResponse> createRatedDestination({
     required int destinationId,
     required int stars,
     required String comment,
     required String createdAt,
   }) async {
-
     final userId = await localStorageService.getCurrentUserId();
 
     try {
@@ -35,26 +35,36 @@ class RateApi {
         }),
       );
 
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 201) {
-        return true;
+        return RequestResponse(
+          success: true,
+          message: data['message'] ?? 'Calificación creada exitosamente',
+        );
       } else {
-        print('Error ${response.statusCode}: ${response.body}');
-        return false;
+        return RequestResponse(
+          success: false,
+          message: data['error'] ?? 'Error al crear la calificación',
+        );
       }
     } catch (e) {
       print('Exception en createRatedDestination: $e');
-      return false;
+      return RequestResponse(
+        success: false,
+        message: 'Error de red o del servidor',
+      );
     }
   }
 
+
   // CREAR CALIFICACIÓN PARA PAQUETE TURÍSTICO
-  Future<bool> createRatedPackage({
+  Future<RequestResponse> createRatedPackage({
     required int tourPackageId,
     required int stars,
     required String comment,
     required String createdAt,
   }) async {
-
     final userId = await localStorageService.getCurrentUserId();
 
     try {
@@ -72,15 +82,25 @@ class RateApi {
         }),
       );
 
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 201) {
-        return true;
+        return RequestResponse(
+          success: true,
+          message: data['message'] ?? 'Calificación del paquete creada exitosamente',
+        );
       } else {
-        print('Error ${response.statusCode}: ${response.body}');
-        return false;
+        return RequestResponse(
+          success: false,
+          message: data['error'] ?? 'Error al calificar el paquete',
+        );
       }
     } catch (e) {
       print('Exception en createRatedPackage: $e');
-      return false;
+      return RequestResponse(
+        success: false,
+        message: 'Error de red o del servidor',
+      );
     }
   }
 

@@ -304,7 +304,7 @@ class _PackageDetailsState extends State<PackageDetails> {
       final now = DateTime.now();
       final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-      final success = await ratePackageUseCase.ratePackage(
+      final ratePackageResponse = await ratePackageUseCase.ratePackage(
         widget.package.id,
         _selectedRating.toInt(),
         _commentController.text, // usa .text, no .toString()
@@ -315,14 +315,14 @@ class _PackageDetailsState extends State<PackageDetails> {
         _isLoading = false;
       });
 
-      if (success) {
+      if (ratePackageResponse.success) {
         _clearRatingData();
         Navigator.of(context).pop();
         _showSuccessMessage('Paquete calificado. Puedes verlo en la sección de "Comunidad"');
       } else {
         _clearRatingData();
         Navigator.of(context).pop();
-        _showErrorMessage('No se pudo calificar el paquete. Intenta nuevamente.');
+        _showErrorMessage(ratePackageResponse.message);
       }
     } catch (e) {
       setState(() {

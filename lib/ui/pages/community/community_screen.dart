@@ -8,6 +8,7 @@ import 'all_destinations_rate.dart';
 import 'all_package_rate.dart';
 import '../home/destination_detail_screen.dart';
 import '../chat/package_details.dart';
+import '../../../data/repositories/local_storage_service.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -21,6 +22,7 @@ class CommunityScreenState extends State<CommunityScreen> {
   List<PackageRate> packageRates = [];
   bool isLoading = false;
   String? errorMessage;
+  final localStorageService = LocalStorageService();
 
   @override
   void initState() {
@@ -123,6 +125,217 @@ class CommunityScreenState extends State<CommunityScreen> {
           isFromChat: false,
         ),
       ),
+    );
+  }
+
+  void _showRatingDetailDialog(dynamic rate, bool isDestination) async{
+    final userId = await localStorageService.getCurrentUserId();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header con botón "Ver destino/paquete"
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Detalle de Reseña',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          if (isDestination) {
+                            _navigateToDestinationDetail(rate as DestinationRate);
+                          } else {
+                            _navigateToPackageDetail(rate as PackageRate);
+                          }
+                        },
+                        child: Text(
+                          isDestination ? 'Ver destino' : 'Ver paquete',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Contenido del diálogo
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(25, 0, 25, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Usuario y avatar
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: isDestination ? Colors.blue[100] : Colors.green[100],
+                            child: Text(
+                              rate.user.firstName.isNotEmpty
+                                  ? rate.user.firstName[0].toUpperCase()
+                                  : 'U',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isDestination ? Colors.blue[700] : Colors.green[700],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${rate.user.firstName} ${rate.user.lastName}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  _formatDate(rate.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Nombre del destino/paquete
+                      Text(
+                        isDestination
+                            ? (rate as DestinationRate).destination.name
+                            : (rate as PackageRate).tourPackage.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Calificación con estrellas
+                      Row(
+                        children: [
+                          const Text(
+                            'Calificación: ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          ...List.generate(5, (index) {
+                            return Icon(
+                              index < rate.stars ? Icons.star : Icons.star_border,
+                              size: 20,
+                              color: Colors.amber,
+                            );
+                          }),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(${rate.stars}/5)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Comentario completo
+                      if (rate.comment.isNotEmpty) ...[
+                         Text(
+                          'Comentario: ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Text(
+                            rate.comment,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                // Botones de acción
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cerrar'),
+                      ),
+                      if (userId.toString() == rate.user.id) ...[
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            // Aquí puedes agregar la lógica para eliminar la reseña
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Funcionalidad de eliminar pendiente'),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Eliminar'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -381,7 +594,7 @@ class CommunityScreenState extends State<CommunityScreen> {
           const SizedBox(width: 8),
           // Botón Ver
           TextButton(
-            onPressed: () => _navigateToDestinationDetail(rate),
+            onPressed: () => _showRatingDetailDialog(rate, true),
             style: TextButton.styleFrom(
               minimumSize: const Size(50, 30),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -527,7 +740,7 @@ class CommunityScreenState extends State<CommunityScreen> {
           const SizedBox(width: 8),
           // Botón Ver
           TextButton(
-            onPressed: () => _navigateToPackageDetail(rate),
+            onPressed: () => _showRatingDetailDialog(rate, false),
             style: TextButton.styleFrom(
               minimumSize: const Size(50, 30),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

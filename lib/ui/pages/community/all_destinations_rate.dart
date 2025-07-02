@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/destination_rate.dart';
 import '../home/destination_detail_screen.dart';
+import '../../../data/repositories/local_storage_service.dart';
 
 class AllDestinationsRate extends StatefulWidget {
   final List<DestinationRate> destinationRates;
@@ -15,6 +16,8 @@ class AllDestinationsRate extends StatefulWidget {
 }
 
 class _AllDestinationsRateState extends State<AllDestinationsRate> {
+  final localStorageService = LocalStorageService();
+
   String _formatDate(String dateString) {
     try {
       final DateTime date = DateTime.parse(dateString);
@@ -228,11 +231,37 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
             ),
           ],
 
-          // Footer con botón de detalle
+          // Footer con botones
           const SizedBox(height: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              FutureBuilder<int?>(
+                future: localStorageService.getCurrentUserId(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data == int.tryParse(rate.user.id.toString())) {
+                    return TextButton(
+                      onPressed: () {
+                        // Aquí puedes agregar la lógica para eliminar la reseña
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Funcionalidad de eliminar pendiente'),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Eliminar',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               TextButton(
                 onPressed: () => _showDestinationDetails(rate),
                 child: Text(

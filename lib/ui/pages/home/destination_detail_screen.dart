@@ -241,7 +241,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
       final now = DateTime.now();
       final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-      final success = await rateDestinationUseCase.rateDestination(
+      final rateDestinationResponse = await rateDestinationUseCase.rateDestination(
         widget.destination.id,
         _selectedRating.toInt(),
         _commentController.text,
@@ -252,14 +252,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         _isLoading = false;
       });
 
-      if (success) {
+      if (rateDestinationResponse.success) {
         _clearRatingData();
         Navigator.of(context).pop();
         _showSuccessMessage('Destino calificado. Puedes verlo en la sección de "Comunidad"');
       } else {
         _clearRatingData();
         Navigator.of(context).pop();
-        _showErrorMessage('No se pudo calificar el destino. Intenta nuevamente.');
+        _showErrorMessage(rateDestinationResponse.message);
       }
     } catch (e) {
       setState(() {
