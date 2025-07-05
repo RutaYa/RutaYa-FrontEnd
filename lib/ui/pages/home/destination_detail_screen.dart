@@ -23,6 +23,7 @@ class DestinationDetailScreen extends StatefulWidget {
 
 class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   bool _isLoading = false;
+  bool _isFavoriteLoading = false;
   int _selectedRating = 0;
   final TextEditingController _commentController = TextEditingController();
 
@@ -32,6 +33,10 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   }
 
   Future<void> _toggleFavorite() async {
+    setState(() {
+      _isFavoriteLoading = true;
+    });
+
     final alterFavoriteUseCase = getIt<AlterFavoriteUseCase>();
     print(widget.destination.isFavorite);
 
@@ -40,11 +45,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         widget.destination.isFavorite
     );
 
-    if (success) {
-      setState(() {
+    setState(() {
+      _isFavoriteLoading = false;
+      if (success) {
         widget.destination.isFavorite = !widget.destination.isFavorite;
-      });
-    } else {
+      }
+    });
+
+    if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error al actualizar favorito'),
@@ -188,7 +196,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: (_selectedRating > 0 && !_isLoading) ? () {
-                          _submitRating();
+                          _submitRating(setDialogState);
                         } : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber,
@@ -199,7 +207,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           ),
                         ),
                         child: _isLoading
-                            ? SizedBox(
+                            ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -230,8 +238,9 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
     });
   }
 
-  Future<void> _submitRating() async {
-    setState(() {
+  Future<void> _submitRating(StateSetter setDialogState) async {
+    // Actualizar el estado del diálogo
+    setDialogState(() {
       _isLoading = true;
     });
 
@@ -248,7 +257,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         formattedDate,
       );
 
-      setState(() {
+      // Actualizar el estado del diálogo
+      setDialogState(() {
         _isLoading = false;
       });
 
@@ -262,7 +272,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         _showErrorMessage(rateDestinationResponse.message);
       }
     } catch (e) {
-      setState(() {
+      // Actualizar el estado del diálogo
+      setDialogState(() {
         _isLoading = false;
       });
       _clearRatingData();
@@ -394,11 +405,20 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
         actions: [
           widget.isFromHome
               ? IconButton(
-            icon: Icon(
+            icon: _isFavoriteLoading
+                ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+              ),
+            )
+                : Icon(
               widget.destination.isFavorite ? Icons.favorite : Icons.favorite_border,
               color: widget.destination.isFavorite ? Colors.red : Colors.black,
             ),
-            onPressed: _toggleFavorite,
+            onPressed: _isFavoriteLoading ? null : _toggleFavorite,
           )
               : const SizedBox.shrink(),
         ],

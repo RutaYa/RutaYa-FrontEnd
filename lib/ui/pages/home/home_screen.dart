@@ -13,6 +13,7 @@ import '../../../domain/entities/user.dart';
 import 'destination_detail_screen.dart';
 import 'destination_search_screen.dart';
 import 'calendar_screen.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,7 +71,34 @@ class _HomeScreenState extends State {
     }
   }
 
+  // Método para crear datos falsos para el skeleton
+  HomeResponse _createFakeData() {
+    final fakeDestinations = List.generate(5, (index) => Destination(
+      id: index,
+      name: 'Nombre del Destino',
+      location: 'Ubicación del lugar',
+      imageUrl: '', // URL vacía para usar Skeleton.replace
+      description: 'Descripción del lugar',
+      isFavorite: false,
+    ));
+
+    final fakeCategories = List.generate(3, (index) => Category(
+      id: index,
+      name: 'Categoría de Destino',
+      destinations: fakeDestinations,
+    ));
+
+    return HomeResponse(
+      suggestions: fakeDestinations,
+      popular: fakeDestinations,
+      categories: fakeCategories,
+      message: '',
+    );
+  }
+
   Future _toggleFavorite(Destination destination) async {
+    if (isLoading) return; // No permitir acciones durante la carga
+
     final alterFavoriteUseCase = getIt<AlterFavoriteUseCase>();
 
     final success = await alterFavoriteUseCase.alterFavorite(
@@ -80,10 +108,7 @@ class _HomeScreenState extends State {
 
     if (success) {
       setState(() {
-        // Actualizar el destino local primero
         destination.isFavorite = !destination.isFavorite;
-
-        // Sincronizar en todas las listas
         _syncFavoriteStatusAcrossAllLists(destination);
       });
     } else {
@@ -97,6 +122,8 @@ class _HomeScreenState extends State {
   }
 
   Future<void> _navigateToDetail(Destination destination, String category) async {
+    if (isLoading) return; // No permitir navegación durante la carga
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -108,7 +135,6 @@ class _HomeScreenState extends State {
       ),
     );
 
-    // Actualizar el estado del favorito en TODAS las listas
     setState(() {
       _syncFavoriteStatusAcrossAllLists(destination);
     });
@@ -117,21 +143,18 @@ class _HomeScreenState extends State {
   void _syncFavoriteStatusAcrossAllLists(Destination updatedDestination) {
     if (homeData == null) return;
 
-    // Actualizar en suggestions
     for (Destination dest in homeData!.suggestions) {
       if (dest.id == updatedDestination.id) {
         dest.isFavorite = updatedDestination.isFavorite;
       }
     }
 
-    // Actualizar en popular
     for (Destination dest in homeData!.popular) {
       if (dest.id == updatedDestination.id) {
         dest.isFavorite = updatedDestination.isFavorite;
       }
     }
 
-    // Actualizar en categorías
     for (Category category in homeData!.categories) {
       for (Destination dest in category.destinations) {
         if (dest.id == updatedDestination.id) {
@@ -142,22 +165,21 @@ class _HomeScreenState extends State {
   }
 
   Future<void> navigateToDestinationSearch() async {
-    if (homeData != null) {
-      final updatedHomeResponse = await Navigator.push<HomeResponse>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DestinationSearchScreen(
-            homeResponse: homeData!,
-          ),
-        ),
-      );
+    if (isLoading || homeData == null) return; // No permitir búsqueda durante la carga
 
-      // Si regresa un HomeResponse actualizado, actualizar el estado
-      if (updatedHomeResponse != null) {
-        setState(() {
-          homeData = updatedHomeResponse;
-        });
-      }
+    final updatedHomeResponse = await Navigator.push<HomeResponse>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DestinationSearchScreen(
+          homeResponse: homeData!,
+        ),
+      ),
+    );
+
+    if (updatedHomeResponse != null) {
+      setState(() {
+        homeData = updatedHomeResponse;
+      });
     }
   }
 
@@ -172,13 +194,12 @@ class _HomeScreenState extends State {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : errorMessage != null
+        child: errorMessage != null
             ? _buildErrorWidget()
-            : homeData != null
-            ? _buildContent()
-            : _buildEmptyWidget(),
+            : Skeletonizer(
+          enabled: isLoading,
+          child: _buildContent(),
+        ),
       ),
     );
   }
@@ -212,36 +233,10 @@ class _HomeScreenState extends State {
     );
   }
 
-  Widget _buildEmptyWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.travel_explore,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No hay datos disponibles',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadHomeData,
-            child: const Text('Cargar datos'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildContent() {
+    // Usar datos falsos cuando está cargando, datos reales cuando no
+    final dataToUse = isLoading ? _createFakeData() : homeData!;
+
     return RefreshIndicator(
       onRefresh: _loadHomeData,
       child: SingleChildScrollView(
@@ -262,28 +257,28 @@ class _HomeScreenState extends State {
               const SizedBox(height: 30),
 
               // Sugerencias para ti
-              if (homeData!.suggestions.isNotEmpty) ...[
+              if (dataToUse.suggestions.isNotEmpty) ...[
                 _buildSectionTitle("Sugerencias para ti:", showViewAll: true),
                 const SizedBox(height: 15),
-                _buildHorizontalDestinationList(homeData!.suggestions, "Sugerencia"),
+                _buildHorizontalDestinationList(dataToUse.suggestions, "Sugerencia"),
                 const SizedBox(height: 30),
               ],
 
-              // Destinos Ocultos (categoría ID 1) - después de sugerencias
-              ...homeData!.categories.where((category) => category.id == 1).map((category) {
+              // Destinos Ocultos (categoría ID 1)
+              ...dataToUse.categories.where((category) => category.id == 1).map((category) {
                 return _buildHiddenGemsSection(category);
               }).toList(),
 
               // Más populares
-              if (homeData!.popular.isNotEmpty) ...[
+              if (dataToUse.popular.isNotEmpty) ...[
                 _buildSectionTitle("Más populares:", showViewAll: true),
                 const SizedBox(height: 15),
-                _buildHorizontalDestinationList(homeData!.popular, "Popular"),
+                _buildHorizontalDestinationList(dataToUse.popular, "Popular"),
                 const SizedBox(height: 30),
               ],
 
               // Otras categorías (todas excepto ID 1)
-              ...homeData!.categories.where((category) => category.id != 1).map((category) {
+              ...dataToUse.categories.where((category) => category.id != 1).map((category) {
                 return _buildCategorySection(category);
               }).toList(),
 
@@ -300,7 +295,6 @@ class _HomeScreenState extends State {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Texto de bienvenida y subtítulo
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -323,20 +317,22 @@ class _HomeScreenState extends State {
           ],
         ),
 
-        // Icono pulsable de calendario
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CalendarScreen()
-              ),
-            );
-          },
-          child: Icon(
-            Icons.calendar_today,
-            color: Color(0xFF303030),
-            size: 28,
+        // Icono de calendario - ignorar durante skeleton
+        Skeleton.ignore(
+          child: GestureDetector(
+            onTap: isLoading ? null : () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => CalendarScreen()
+                ),
+              );
+            },
+            child: Icon(
+              Icons.calendar_today,
+              color: Color(0xFF303030),
+              size: 28,
+            ),
           ),
         ),
       ],
@@ -345,21 +341,21 @@ class _HomeScreenState extends State {
 
   Widget _buildSearchBar() {
     return GestureDetector(
-      onTap: () {
-        navigateToDestinationSearch();
-      },
+      onTap: isLoading ? null : navigateToDestinationSearch,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[200]!),
         ),
-        child: AbsorbPointer( // Evita que el TextField sea editable
+        child: AbsorbPointer(
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Buscar destinos en Perú...',
               hintStyle: TextStyle(color: Colors.grey[500]),
-              prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+              prefixIcon: Skeleton.ignore(
+                child: Icon(Icons.search, color: Colors.grey[500]),
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             ),
@@ -387,7 +383,7 @@ class _HomeScreenState extends State {
 
   Widget _buildHorizontalDestinationList(List<Destination> destinations, String category) {
     return SizedBox(
-      height: 200, // Altura fija para las tarjetas
+      height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: destinations.length,
@@ -397,7 +393,7 @@ class _HomeScreenState extends State {
               right: index == destinations.length - 1 ? 0 : 15,
             ),
             child: SizedBox(
-              width: 160, // Ancho fijo para cada tarjeta
+              width: 160,
               child: _buildDestinationCard(destinations[index], category),
             ),
           );
@@ -425,7 +421,7 @@ class _HomeScreenState extends State {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              // Imagen o placeholder
+              // Imagen o skeleton replacement
               Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -474,21 +470,25 @@ class _HomeScreenState extends State {
                     );
                   },
                 )
-                    : Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.grey[300]!,
-                        Colors.grey[200]!,
-                      ],
+                    : Skeleton.replace(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.grey[300]!,
+                          Colors.grey[200]!,
+                        ],
+                      ),
                     ),
-                  ),
-                  child: Icon(
-                    Icons.landscape,
-                    size: 40,
-                    color: Colors.grey[400],
+                    child: Icon(
+                      Icons.landscape,
+                      size: 40,
+                      color: Colors.grey[400],
+                    ),
                   ),
                 ),
               ),
@@ -507,12 +507,12 @@ class _HomeScreenState extends State {
                 ),
               ),
 
-              // Botón de favorito
+              // Botón de favorito - mantener durante skeleton pero deshabilitar
               Positioned(
                 top: 8,
                 right: 8,
                 child: GestureDetector(
-                  onTap: () => _toggleFavorite(destination),
+                  onTap: isLoading ? null : () => _toggleFavorite(destination),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -556,10 +556,12 @@ class _HomeScreenState extends State {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 12,
-                          color: Colors.white.withOpacity(0.8),
+                        Skeleton.ignore(
+                          child: Icon(
+                            Icons.location_on,
+                            size: 12,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
                         ),
                         const SizedBox(width: 2),
                         Expanded(
@@ -589,7 +591,6 @@ class _HomeScreenState extends State {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Título especial para destinos ocultos
         Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
@@ -601,16 +602,18 @@ class _HomeScreenState extends State {
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFD0000),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.explore,
-                  color: Colors.white,
-                  size: 20,
+              Skeleton.ignore(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFD0000),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.explore,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -642,7 +645,6 @@ class _HomeScreenState extends State {
 
         const SizedBox(height: 15),
 
-        // Lista horizontal de destinos ocultos
         _buildHorizontalDestinationList(category.destinations, category.name),
 
         const SizedBox(height: 30),

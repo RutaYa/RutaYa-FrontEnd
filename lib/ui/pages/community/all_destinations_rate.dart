@@ -20,7 +20,7 @@ class AllDestinationsRate extends StatefulWidget {
 class _AllDestinationsRateState extends State<AllDestinationsRate> {
   final localStorageService = LocalStorageService();
   late List<DestinationRate> localDestinationRates;
-  bool isDeleteLoading = false;
+  int? deletingItemId; // Cambiado de bool a String nullable
 
   @override
   void initState() {
@@ -56,7 +56,7 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
 
   Future<void> _deleteDestinationRate(DestinationRate rate) async {
     setState(() {
-      isDeleteLoading = true;
+      deletingItemId = rate.id; // Guardamos el ID del item que se está eliminando
     });
 
     final deleteDestinationUseCase = getIt<DeleteDestinationRateUseCase>();
@@ -85,7 +85,7 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
       );
     } finally {
       setState(() {
-        isDeleteLoading = false;
+        deletingItemId = null; // Limpiamos el ID
       });
     }
   }
@@ -151,6 +151,8 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
   }
 
   Widget _buildDestinationRateCard(DestinationRate rate) {
+    final bool isThisItemDeleting = deletingItemId == rate.id;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -287,12 +289,21 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data == int.tryParse(rate.user.id.toString())) {
                     return TextButton(
-                      onPressed: isDeleteLoading ? null : () => _deleteDestinationRate(rate),
-                      child: Text(
+                      onPressed: isThisItemDeleting ? null : () => _deleteDestinationRate(rate),
+                      child: isThisItemDeleting
+                          ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                        ),
+                      )
+                          : const Text(
                         'Eliminar',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDeleteLoading ? Colors.grey : Colors.red,
+                          color: Colors.red,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -303,7 +314,7 @@ class _AllDestinationsRateState extends State<AllDestinationsRate> {
               ),
               TextButton(
                 onPressed: () => _showDestinationDetails(rate),
-                child: Text(
+                child: const Text(
                   'Ver destino',
                   style: TextStyle(
                     fontSize: 12,

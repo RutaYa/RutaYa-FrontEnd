@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../main.dart';
 import '../../../application/get_tour_packages_use_case.dart';
 import '../../../application/delete_tour_package_use_case.dart';
@@ -183,6 +184,21 @@ class ReservationsScreenState extends State<ReservationsScreen> {
     );
   }
 
+  // Crear datos dummy para el skeleton
+  List<TourPackage> _createSkeletonPackages() {
+    return List.generate(3, (index) => TourPackage(
+      id: index,
+      title: 'Paquete de ejemplo para skeleton loading',
+      description: 'Esta es una descripción de ejemplo que se muestra mientras se cargan los datos reales desde el servidor.',
+      price: 299.99,
+      startDate: DateTime.now().toIso8601String(),
+      quantity: 2,
+      isPaid: index % 2 == 0,
+      itinerary: [],
+      userId: 0,
+      days: 0,
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +224,7 @@ class ReservationsScreenState extends State<ReservationsScreen> {
           ),
         ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.grey))
-          : errorMessage != null
+      body: errorMessage != null
           ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -226,7 +240,7 @@ class ReservationsScreenState extends State<ReservationsScreen> {
             ElevatedButton(
               onPressed: _loadReservationData,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626), // Botón rojo elegante
+                backgroundColor: const Color(0xFFDC2626),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Reintentar'),
@@ -234,8 +248,52 @@ class ReservationsScreenState extends State<ReservationsScreen> {
           ],
         ),
       )
-          : tourPackages.isEmpty
-          ? Center(
+          : RefreshIndicator(
+        color: const Color(0xFFDC2626),
+        onRefresh: _loadReservationData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Skeletonizer(
+            enabled: isLoading,
+            child: _buildContent(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    // Si está cargando, mostrar skeleton con datos dummy
+    if (isLoading) {
+      final skeletonPackages = _createSkeletonPackages();
+      final skeletonReserved = skeletonPackages.where((p) => p.isPaid).toList();
+      final skeletonPending = skeletonPackages.where((p) => !p.isPaid).toList();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Skeleton para Reservas Confirmadas
+          if (skeletonReserved.isNotEmpty) ...[
+            _buildSectionHeader('Reservas Confirmadas', const Color(0xFFDC2626)),
+            const SizedBox(height: 16),
+            ...skeletonReserved.map((package) => _buildReservedPackageCard(package)),
+            const SizedBox(height: 32),
+          ],
+
+          // Skeleton para Reservas Pendientes
+          if (skeletonPending.isNotEmpty) ...[
+            _buildSectionHeader('Pendientes de Pago', Colors.amber[700]!),
+            const SizedBox(height: 16),
+            ...skeletonPending.map((package) => _buildPendingPackageCard(package)),
+          ],
+        ],
+      );
+    }
+
+    // Si no hay paquetes, mostrar mensaje vacío
+    if (tourPackages.isEmpty) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -253,74 +311,52 @@ class ReservationsScreenState extends State<ReservationsScreen> {
             ),
           ],
         ),
-      )
-          : RefreshIndicator(
-        color: const Color(0xFFDC2626), // Indicador de refresh rojo
-        onRefresh: _loadReservationData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Sección de Reservas Confirmadas
-              if (reservedPackages.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Container(
-                      width: 3,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626), // Rojo elegante
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Reservas Confirmadas',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ...reservedPackages.map((package) => _buildReservedPackageCard(package)),
-                const SizedBox(height: 32),
-              ],
+      );
+    }
 
-              // Sección de Reservas Pendientes
-              if (pendingPackages.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Container(
-                      width: 3,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: Colors.amber[700],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Pendientes de Pago',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ...pendingPackages.map((package) => _buildPendingPackageCard(package)),
-              ],
-            ],
+    // Mostrar datos reales
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sección de Reservas Confirmadas
+        if (reservedPackages.isNotEmpty) ...[
+          _buildSectionHeader('Reservas Confirmadas', const Color(0xFFDC2626)),
+          const SizedBox(height: 16),
+          ...reservedPackages.map((package) => _buildReservedPackageCard(package)),
+          const SizedBox(height: 32),
+        ],
+
+        // Sección de Reservas Pendientes
+        if (pendingPackages.isNotEmpty) ...[
+          _buildSectionHeader('Pendientes de Pago', Colors.amber[700]!),
+          const SizedBox(height: 16),
+          ...pendingPackages.map((package) => _buildPendingPackageCard(package)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 20,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-      ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 
@@ -370,6 +406,8 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                 fontSize: 14,
                 height: 1.4,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
@@ -424,11 +462,11 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2C2C2C), // Precio en rojo elegante
+                    color: Color(0xFF2C2C2C),
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: isLoading ? null : () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -450,7 +488,7 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                   child: const Text(
                     'Ver Detalles',
                     style: TextStyle(
-                      color: Color(0xFFFFFFFF), // Texto rojo
+                      color: Color(0xFFFFFFFF),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -514,7 +552,7 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => _deletePendingPackage(package),
+                  onTap: isLoading ? null : () => _deletePendingPackage(package),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -542,6 +580,8 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                 fontSize: 14,
                 height: 1.4,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
@@ -596,11 +636,11 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2C2C2C), // Precio en rojo elegante
+                    color: Color(0xFF2C2C2C),
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: isLoading ? null : () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -622,7 +662,7 @@ class ReservationsScreenState extends State<ReservationsScreen> {
                   child: const Text(
                     'Ver Detalles',
                     style: TextStyle(
-                      color: Color(0xFFFFFFFF), // Texto rojo
+                      color: Color(0xFFFFFFFF),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),

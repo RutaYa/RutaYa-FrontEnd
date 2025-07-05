@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../domain/entities/destination_rate.dart';
 import '../../../domain/entities/package_rate.dart';
 import '../../../domain/entities/community_response.dart';
@@ -143,8 +144,9 @@ class CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Future<void> deleteRate(bool isDestination, dynamic rate) async {
-    setState(() {
+  Future<void> deleteRate(bool isDestination, dynamic rate, StateSetter setDialogState) async {
+    // Actualizar el estado del diálogo
+    setDialogState(() {
       isDeleteLoading = true;
     });
 
@@ -188,224 +190,344 @@ class CommunityScreenState extends State<CommunityScreen> {
         ),
       );
     } finally {
-      setState(() {
+      // Actualizar el estado del diálogo
+      setDialogState(() {
         isDeleteLoading = false;
       });
     }
   }
 
-  void _showRatingDetailDialog(dynamic rate, bool isDestination) async{
+  void _showRatingDetailDialog(dynamic rate, bool isDestination) async {
     final userId = await localStorageService.getCurrentUserId();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header con botón "Ver destino/paquete"
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Detalle de Reseña',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header con botón "Ver destino/paquete"
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          if (isDestination) {
-                            _navigateToDestinationDetail(rate as DestinationRate);
-                          } else {
-                            _navigateToPackageDetail(rate as PackageRate);
-                          }
-                        },
-                        child: Text(
-                          isDestination ? 'Ver destino' : 'Ver paquete',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Contenido del diálogo
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(25, 0, 25, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Usuario y avatar
-                      Row(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: isDestination ? Colors.blue[100] : Colors.green[100],
+                          const Text(
+                            'Detalle de Reseña',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              if (isDestination) {
+                                _navigateToDestinationDetail(rate as DestinationRate);
+                              } else {
+                                _navigateToPackageDetail(rate as PackageRate);
+                              }
+                            },
                             child: Text(
-                              rate.user.firstName.isNotEmpty
-                                  ? rate.user.firstName[0].toUpperCase()
-                                  : 'U',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isDestination ? Colors.blue[700] : Colors.green[700],
+                              isDestination ? 'Ver destino' : 'Ver paquete',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${rate.user.firstName} ${rate.user.lastName}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  _formatDate(rate.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // Nombre del destino/paquete
-                      Text(
-                        isDestination
-                            ? (rate as DestinationRate).destination.name
-                            : (rate as PackageRate).tourPackage.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Calificación con estrellas
-                      Row(
+                    ),
+                    // Contenido del diálogo
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(25, 0, 25, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Calificación: ',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          // Usuario y avatar
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: isDestination ? Colors.blue[100] : Colors.green[100],
+                                child: Text(
+                                  rate.user.firstName.isNotEmpty
+                                      ? rate.user.firstName[0].toUpperCase()
+                                      : 'U',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDestination ? Colors.blue[700] : Colors.green[700],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${rate.user.firstName} ${rate.user.lastName}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      _formatDate(rate.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          ...List.generate(5, (index) {
-                            return Icon(
-                              index < rate.stars ? Icons.star : Icons.star_border,
-                              size: 20,
-                              color: Colors.amber,
-                            );
-                          }),
-                          const SizedBox(width: 8),
+                          const SizedBox(height: 16),
+                          // Nombre del destino/paquete
                           Text(
-                            '(${rate.stars}/5)',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            isDestination
+                                ? (rate as DestinationRate).destination.name
+                                : (rate as PackageRate).tourPackage.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          // Calificación con estrellas
+                          Row(
+                            children: [
+                              const Text(
+                                'Calificación: ',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              ...List.generate(5, (index) {
+                                return Icon(
+                                  index < rate.stars ? Icons.star : Icons.star_border,
+                                  size: 20,
+                                  color: Colors.amber,
+                                );
+                              }),
+                              const SizedBox(width: 8),
+                              Text(
+                                '(${rate.stars}/5)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          // Comentario completo
+                          if (rate.comment.isNotEmpty) ...[
+                            Text(
+                              'Comentario: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Text(
+                                rate.comment,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // Comentario completo
-                      if (rate.comment.isNotEmpty) ...[
-                         Text(
-                          'Comentario: ',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                    ),
+                    // Botones de acción
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: isDeleteLoading ? null : () => Navigator.pop(context),
+                            child: const Text('Cerrar'),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Text(
-                            rate.comment,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
+                          if (userId.toString() == rate.user.id) ...[
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: isDeleteLoading ? null : () {
+                                deleteRate(isDestination, rate, setDialogState);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: isDeleteLoading
+                                  ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                                  : const Text('Eliminar'),
                             ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                // Botones de acción
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: isDeleteLoading ? null : () => Navigator.pop(context),
-                        child: const Text('Cerrar'),
+                          ],
+                        ],
                       ),
-                      if (userId.toString() == rate.user.id) ...[
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: isDeleteLoading ? null : () {
-                            // No cerrar el diálogo, solo ejecutar deleteRate
-                            deleteRate(isDestination, rate);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: isDeleteLoading
-                              ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                              : const Text('Eliminar'),
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Skeleton widgets
+  Widget _buildSkeletonDestinationCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar skeleton
+          const Bone.circle(size: 32),
+          const SizedBox(width: 12),
+          // Content skeleton
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Bone.text(words: 2, fontSize: 13),
+                    const Spacer(),
+                    Row(
+                      children: List.generate(5, (index) => const Bone.icon(size: 14)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Bone.text(words: 3, fontSize: 12),
+                const SizedBox(height: 4),
+                Bone.text(words: 8, fontSize: 12),
+                const SizedBox(height: 6),
+                Bone.text(words: 2, fontSize: 10),
               ],
             ),
           ),
-        );
-      },
+          const SizedBox(width: 8),
+          // Button skeleton
+          const Bone.text(words: 1, fontSize: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonPackageCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar skeleton
+          const Bone.circle(size: 32),
+          const SizedBox(width: 12),
+          // Content skeleton
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Bone.text(words: 2, fontSize: 13),
+                    const Spacer(),
+                    Row(
+                      children: List.generate(5, (index) => const Bone.icon(size: 14)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Bone.text(words: 4, fontSize: 12),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Bone.icon(size: 10),
+                    const SizedBox(width: 2),
+                    Bone.text(words: 1, fontSize: 10),
+                    const SizedBox(width: 8),
+                    const Bone.icon(size: 10),
+                    Bone.text(words: 1, fontSize: 10),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Bone.text(words: 8, fontSize: 12),
+                const SizedBox(height: 6),
+                Bone.text(words: 2, fontSize: 10),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Button skeleton
+          const Bone.text(words: 1, fontSize: 12),
+        ],
+      ),
     );
   }
 
@@ -425,9 +547,7 @@ class CommunityScreenState extends State<CommunityScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
+      body: errorMessage != null
           ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -459,102 +579,117 @@ class CommunityScreenState extends State<CommunityScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Sección de Calificaciones de Destinos
-              if (destinationRates.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Reseñas de Destinos',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _navigateToAllDestinations,
-                      child: Text(
-                        'Ver todos',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...destinationRates.take(3).map((rate) => _buildDestinationRateCard(rate)),
-                const SizedBox(height: 24),
-              ],
-
-              // Sección de Calificaciones de Paquetes
-              if (packageRates.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Reseñas de Paquetes Turísticos',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _navigateToAllPackages,
-                      child: Text(
-                        'Ver todos',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ...packageRates.take(3).map((rate) => _buildPackageRateCard(rate)),
-              ],
-
-              // Mensaje cuando no hay reseñas
-              if (destinationRates.isEmpty && packageRates.isEmpty)
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          child: Skeletonizer(
+            enabled: isLoading,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sección de Calificaciones de Destinos
+                if (isLoading || destinationRates.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SizedBox(height: 100),
-                      Icon(
-                        Icons.rate_review_outlined,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No hay reseñas disponibles',
+                      const Text(
+                        'Reseñas de Destinos',
                         style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sé el primero en compartir tu experiencia',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
+                      TextButton(
+                        onPressed: isLoading ? null : _navigateToAllDestinations,
+                        child: Text(
+                          'Ver todos',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-            ],
+                  const SizedBox(height: 12),
+                  if (isLoading) ...[
+                    // Mostrar skeletons mientras carga
+                    ...[1, 2, 3].map((i) => _buildSkeletonDestinationCard()),
+                  ] else ...[
+                    // Mostrar datos reales
+                    ...destinationRates.take(3).map((rate) => _buildDestinationRateCard(rate)),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+
+                // Sección de Calificaciones de Paquetes
+                if (isLoading || packageRates.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Reseñas de Paquetes Turísticos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: isLoading ? null : _navigateToAllPackages,
+                        child: Text(
+                          'Ver todos',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (isLoading) ...[
+                    // Mostrar skeletons mientras carga
+                    ...[1, 2, 3].map((i) => _buildSkeletonPackageCard()),
+                  ] else ...[
+                    // Mostrar datos reales
+                    ...packageRates.take(3).map((rate) => _buildPackageRateCard(rate)),
+                  ],
+                ],
+
+                // Mensaje cuando no hay reseñas (solo si no está cargando)
+                if (!isLoading && destinationRates.isEmpty && packageRates.isEmpty)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 100),
+                        Icon(
+                          Icons.rate_review_outlined,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No hay reseñas disponibles',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sé el primero en compartir tu experiencia',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

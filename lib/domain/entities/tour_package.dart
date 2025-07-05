@@ -22,7 +22,7 @@ class TourPackage {
     required this.quantity,
     required this.price,
     required this.isPaid,
-    required this.itinerary,
+    required this.itinerary
   });
 
   TourPackage copyWith({
