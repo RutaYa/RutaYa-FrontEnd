@@ -22,6 +22,7 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
   final localStorageService = LocalStorageService();
   final _formKey = GlobalKey<FormState>();
   User? currentUser;
+  bool isLoading = false; // Variable de loading agregada
 
   // Controladores
   DateTime? _birthDate;
@@ -472,20 +473,29 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: isLoading ? null : () {
           if (_formKey.currentState!.validate()) {
             _savePreferences();
           }
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF6211F),
+          backgroundColor: isLoading ? Colors.grey : const Color(0xFFF6211F),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        child: const Text(
+        child: isLoading
+            ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+            : const Text(
           'Guardar Preferencias',
           style: TextStyle(
             fontSize: 18,
@@ -511,8 +521,12 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
       return;
     }
 
-    try {
+    // Activar el loading
+    setState(() {
+      isLoading = true;
+    });
 
+    try {
       final savePreferencesUseCase = getIt<SaveUserPreferencesUseCase>();
 
       // Crear la instancia de UserPreferences
@@ -532,7 +546,6 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
 
       // Guardar las preferencias
       final preferencesResponse = await savePreferencesUseCase.saveUserPreferences(userPreferences);
-
 
       if (preferencesResponse) {
         // También guardar en la base de datos local
@@ -569,6 +582,11 @@ class _PreferencesFormScreenState extends State<PreferencesFormScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      // Desactivar el loading cuando termine el proceso
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
