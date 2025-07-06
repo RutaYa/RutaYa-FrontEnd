@@ -20,7 +20,7 @@ class AllPackageRate extends StatefulWidget {
 class _AllPackageRateState extends State<AllPackageRate> {
   final localStorageService = LocalStorageService();
   late List<PackageRate> localPackageRates;
-  bool isDeleteLoading = false;
+  int? deletingItemId; // Cambiado de bool a String nullable
 
   @override
   void initState() {
@@ -55,7 +55,7 @@ class _AllPackageRateState extends State<AllPackageRate> {
 
   Future<void> _deletePackageRate(PackageRate rate) async {
     setState(() {
-      isDeleteLoading = true;
+      deletingItemId = rate.id;
     });
 
     final deleteTourRateUseCase = getIt<DeleteTourRateUseCase>();
@@ -84,7 +84,7 @@ class _AllPackageRateState extends State<AllPackageRate> {
       );
     } finally {
       setState(() {
-        isDeleteLoading = false;
+        deletingItemId = null; // Limpiamos el ID
       });
     }
   }
@@ -150,6 +150,8 @@ class _AllPackageRateState extends State<AllPackageRate> {
   }
 
   Widget _buildPackageRateCard(PackageRate rate) {
+    final bool isThisItemDeleting = deletingItemId == rate.id;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -311,12 +313,21 @@ class _AllPackageRateState extends State<AllPackageRate> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data == int.tryParse(rate.user.id.toString())) {
                     return TextButton(
-                      onPressed: isDeleteLoading ? null : () => _deletePackageRate(rate),
-                      child: Text(
+                      onPressed: isThisItemDeleting ? null : () => _deletePackageRate(rate),
+                      child: isThisItemDeleting
+                          ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                        ),
+                      )
+                          : const Text(
                         'Eliminar',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDeleteLoading ? Colors.grey : Colors.red,
+                          color: Colors.red,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

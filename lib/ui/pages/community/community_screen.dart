@@ -206,6 +206,7 @@ class CommunityScreenState extends State<CommunityScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 400),

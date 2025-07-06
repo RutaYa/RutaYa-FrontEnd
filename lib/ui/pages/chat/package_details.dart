@@ -251,7 +251,7 @@ class _PackageDetailsState extends State<PackageDetails> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: (_selectedRating > 0 && !_isLoading) ? () {
-                          _submitRating();
+                          _submitRating(setDialogState); // Pasar setDialogState
                         } : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber,
@@ -293,8 +293,9 @@ class _PackageDetailsState extends State<PackageDetails> {
     });
   }
 
-  Future<void> _submitRating() async {
-    setState(() {
+  Future<void> _submitRating(StateSetter setDialogState) async {
+    // Usar setDialogState para actualizar la UI del diálogo
+    setDialogState(() {
       _isLoading = true;
     });
 
@@ -307,11 +308,11 @@ class _PackageDetailsState extends State<PackageDetails> {
       final ratePackageResponse = await ratePackageUseCase.ratePackage(
         widget.package.id,
         _selectedRating.toInt(),
-        _commentController.text, // usa .text, no .toString()
+        _commentController.text,
         formattedDate,
       );
 
-      setState(() {
+      setDialogState(() {
         _isLoading = false;
       });
 
@@ -325,7 +326,7 @@ class _PackageDetailsState extends State<PackageDetails> {
         _showErrorMessage(ratePackageResponse.message);
       }
     } catch (e) {
-      setState(() {
+      setDialogState(() {
         _isLoading = false;
       });
       _clearRatingData();
@@ -333,6 +334,7 @@ class _PackageDetailsState extends State<PackageDetails> {
       _showErrorMessage('Error al calificar el paquete: ${e.toString()}');
     }
   }
+
 
   @override
   void dispose() {
